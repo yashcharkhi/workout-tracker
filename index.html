@@ -1,0 +1,925 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Powerbuilding">
+<meta name="theme-color" content="#111417">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<script>window.PB_APP=true;</script></head><body>
+<title>Powerbuilding</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: single phone column, sticky week/day header, fixed bottom tab bar; plate colours mark main lifts */
+:root{
+  --bg:#eef0ee; --surface:#ffffff; --sunk:#e3e6e3; --line:#d3d7d3;
+  --fg:#16191b; --muted:#5d6560; --accent:#1f45c4; --accent-ink:#ffffff;
+  --plate:#c8322b; --good:#1d7a45; --warn:#a86a00;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:10px;
+  --stage:#151a20; --stage-hi:#262e38; --stage-ink:#9aa6b2; --fig:#2c343e; --fig-hi:#3b4552; --fig-line:#4a5563;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111417; --surface:#1a1e22; --sunk:#232830; --line:#2e343b;
+  --fg:#eceeed; --muted:#9aa29e; --accent:#7f9cff; --accent-ink:#0d1330;
+  --plate:#ff6b5e; --good:#4fc681; --warn:#e8a93a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111417; --surface:#1a1e22; --sunk:#232830; --line:#2e343b;
+  --fg:#eceeed; --muted:#9aa29e; --accent:#7f9cff; --accent-ink:#0d1330;
+  --plate:#ff6b5e; --good:#4fc681; --warn:#e8a93a; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:16px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 calc(150px + env(safe-area-inset-bottom,0px))}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+.num,input,.tab{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:12px 10px;border-bottom:1px solid var(--line);display:grid;gap:10px}
+.toprow{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.toprow h1{font-size:30px;line-height:1}
+.sync{font-size:12px;color:var(--muted)}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:600;min-height:34px}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip.today{box-shadow:inset 0 -3px 0 var(--accent)}
+.chip.rest{color:var(--muted)}
+.chip .sub{font-weight:500;opacity:.7}
+
+main{display:grid;gap:14px;padding-top:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:10px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 14px;font-weight:600;min-height:42px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--accent);padding-inline:6px}
+.btn.danger{color:var(--plate)}
+.btn.block{width:100%}
+.field{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:9px 10px;font:inherit;color:var(--fg);min-height:42px;width:100%;min-width:0}
+
+/* day title */
+.dayhead{display:grid;gap:4px;padding-top:4px}
+.dayhead h2{font-size:34px;line-height:1.02}
+.dayhead .meta{color:var(--muted);font-size:14px}
+
+/* bodyweight */
+.bw{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+.bwbig{font-family:var(--display);font-size:36px;font-weight:700;line-height:1}
+.bwbig small{font-size:16px;color:var(--muted);font-weight:600;margin-left:3px}
+.delta{font-size:13px;font-weight:600}
+.delta.up{color:var(--warn)} .delta.down{color:var(--good)}
+
+/* exercise */
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.ex.main{border-left:5px solid var(--plate)}
+.exhead{padding:12px 12px 6px 14px;display:grid;gap:4px}
+.exname{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.exname h3{font-size:22px;line-height:1.1}
+.badge{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--plate);margin-bottom:2px}
+.target{font-size:14px;color:var(--fg)}
+.target b{font-weight:600}
+.target .sep{color:var(--line);margin:0 4px}
+.last{font-size:13px;color:var(--muted)}
+.dots{min-width:40px;min-height:36px;border:none;background:transparent;font-size:20px;line-height:1;color:var(--muted);border-radius:8px}
+.edit{background:var(--sunk);padding:10px 14px;display:grid;gap:8px;border-top:1px solid var(--line)}
+.sets{display:grid;padding:4px 10px 10px}
+.setrow{display:grid;grid-template-columns:30px 1fr 1fr 1fr 48px;gap:6px;align-items:center;padding:4px 0}
+.setrow.head{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-bottom:0}
+.setrow.head span{text-align:center}
+.setno{font-family:var(--display);font-weight:700;font-size:18px;text-align:center;color:var(--muted)}
+.setrow input{width:100%;min-width:0;text-align:center;border:1px solid var(--line);background:var(--sunk);border-radius:8px;height:44px;font:600 18px var(--body);color:var(--fg);padding:0 4px}
+.setrow input::placeholder{color:var(--muted);opacity:.55;font-weight:500}
+.setrow.done input{background:transparent;border-color:transparent}
+.check{height:44px;border-radius:10px;border:2px solid var(--line);background:transparent;font-size:20px;font-weight:700;color:transparent}
+.setrow.done .check{background:var(--good);border-color:var(--good);color:#fff}
+.setrow.done .setno{color:var(--good)}
+.sets.ranked .setrow{grid-template-columns:28px 1fr 1fr 1fr 34px 44px}
+.medal{width:32px;height:32px;border-radius:50%;display:grid;place-content:center;justify-items:center;line-height:.95;font:700 13px var(--display);letter-spacing:.02em;justify-self:center;color:#1b1406;box-shadow:inset 0 0 0 2px rgba(255,255,255,.45),0 1px 2px rgba(0,0,0,.25)}
+.m-gold{background:radial-gradient(circle at 35% 30%,#ffe9a3,#d9a520 60%,#a87a0c)}
+.m-plat{background:radial-gradient(circle at 35% 30%,#f4fbff,#a9c4d6 60%,#6f8ea3)}
+.m-dia{background:radial-gradient(circle at 35% 30%,#d9f6ff,#3fb8e8 60%,#1d7fb0);color:#04263a}
+.m-master{background:radial-gradient(circle at 35% 30%,#e3d4ff,#8b5cf6 60%,#5b2fc2);color:#fff}
+button.medal{border:none;padding:0;cursor:pointer}
+.medal i{font-style:normal;font-size:8.5px;letter-spacing:.06em;opacity:.85}
+.m-gm{background:radial-gradient(circle at 35% 30%,#ffc4c9,#e0384f 60%,#9c1730);color:#fff}
+.m-champ{background:radial-gradient(circle at 35% 30%,#7fe0d0,#0f8a7c 60%,#08524a);color:#ffe28a}
+.m-titan{background:radial-gradient(circle at 35% 30%,#c9d1dc,#4a5566 60%,#1e252f);color:#f4f7fb}
+.m-legend{background:conic-gradient(from 200deg,#ff3d2e,#ffb02e,#ff3d2e,#c81e5a,#ff3d2e);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.4)}
+.ranks td,.ranks th{text-align:center} .ranks td:first-child,.ranks th:first-child{text-align:left}
+.rankname{display:flex;align-items:center;gap:8px;font-weight:600}
+.rankname .medal{width:28px;height:28px;font-size:11px;justify-self:start}
+.bodies{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bodies figure{margin:0;display:grid;gap:4px;justify-items:center}
+.bodies figcaption{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+svg.body{width:100%;max-width:200px;height:auto}
+.bodies{background:radial-gradient(ellipse at 50% 30%,var(--stage-hi),var(--stage) 70%);border-radius:12px;padding:14px 6px 10px}
+.bodies figcaption{color:var(--stage-ink)}
+svg.body .sil{stroke:var(--fig-line);stroke-width:1;pointer-events:none}
+svg.body .mu{cursor:pointer}
+svg.body .mu path{stroke:rgba(0,0,0,.35);stroke-width:.8;stroke-linejoin:round}
+svg.body .mu .gloss{stroke:none;pointer-events:none}
+svg.body .mu.sel path:first-of-type{stroke:#fff;stroke-width:2}
+svg.body .detail{fill:none;stroke:rgba(0,0,0,.3);stroke-width:.9;stroke-linecap:round;pointer-events:none}
+@media (prefers-reduced-motion:no-preference){svg.body .mu path{transition:fill .3s}}
+.heat{height:10px;border-radius:5px;background:linear-gradient(90deg,hsl(0 72% 50%),hsl(45 85% 50%),hsl(130 55% 42%))}
+.mbar{height:8px;border-radius:4px;background:var(--sunk);overflow:hidden;flex:1;min-width:60px}
+.mbar span{display:block;height:100%}
+.mrow{display:flex;align-items:center;gap:10px;padding:6px 0;border:none;background:transparent;width:100%;text-align:left;font:inherit;color:inherit}
+.mrow .mn{width:96px;font-weight:600;font-size:14px}
+.mrow .mv{width:44px;text-align:right;font-size:13px;color:var(--muted)}
+.mrow.sel .mn{color:var(--accent)}
+.setbtns{display:flex;gap:4px;justify-content:flex-end;padding:0 6px 8px}
+
+.addex{border:1.5px dashed var(--line);border-radius:var(--r);padding:12px;display:grid;gap:8px}
+.grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+textarea.field{min-height:70px;resize:vertical}
+
+/* rest day */
+.restcard{padding:26px 18px;text-align:left}
+.restcard h2{font-size:44px}
+
+/* rest timer + nav */
+.timer{position:fixed;left:0;right:0;bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:25;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.timer .in{max-width:560px;margin:0 auto 8px;background:var(--fg);color:var(--bg);border-radius:12px;padding:8px 8px 8px 14px;display:flex;align-items:center;gap:8px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.timer .t{font-family:var(--display);font-size:28px;font-weight:700;flex:1}
+.timer .t small{font-family:var(--body);font-size:12px;opacity:.7;font-weight:500;letter-spacing:.06em;text-transform:uppercase;margin-right:8px}
+.timer button{background:transparent;border:1px solid currentColor;color:inherit;border-radius:8px;padding:6px 10px;font-weight:600;min-height:38px}
+.timer.over .in{background:var(--good);color:#fff}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:26;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+.tab{border:none;background:transparent;height:60px;font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.tab.on{color:var(--fg);box-shadow:inset 0 3px 0 var(--accent)}
+
+/* progress */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--sunk);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font-family:var(--display);font-size:24px;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted)}
+svg.chart{width:100%;height:auto;display:block;max-width:100%}
+svg.chart text{fill:var(--muted);font:11px var(--body)}
+.list{display:grid}
+.li{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:center}
+.li:first-child{border-top:none}
+.li .l{min-width:0}
+.li h3{font-size:19px}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+table.t td,table.t th{padding:6px 4px;border-top:1px solid var(--line);text-align:left}
+table.t th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;border-top:none}
+.tscroll{overflow-x:auto}
+.note{font-size:14px;line-height:1.5;color:var(--fg)}
+.note li{margin-bottom:6px}
+.done-banner{background:var(--good);color:#fff;border-radius:var(--r);padding:14px;display:grid;gap:4px}
+.done-banner h3{font-size:24px}
+@media (prefers-reduced-motion:no-preference){.setrow.done .check{transition:background .15s}}
+</style>
+
+<div class="wrap">
+  <header id="hdr"></header>
+  <main id="main"><div class="card"><p class="muted">Loading your plan…</p></div></main>
+</div>
+<div class="timer" id="timer" hidden></div>
+<nav><div class="in" id="nav"></div></nav>
+
+<script>
+const IS_APP = !!window.PB_APP;
+const PLANS = {standard: {"name":"4-Week Powerbuilding Plan","oneRM":{"bench":112.5,"squat":135,"deadlift":165},"units":"kg","split":{"Monday":"Bench Heavy","Tuesday":"Squat Heavy","Wednesday":"Upper Pull","Thursday":"Rest","Friday":"Deadlift + Squat","Saturday":"Bench Volume","Sunday":"Rest"},"notes":["RPE 6=4 RIR, 7=3, 8=2, 9=1, 10=0. Adjust main lifts 2.5-5 kg if bar speed is off the listed RPE.","Accessories: once you hit top of rep range on all sets at target RPE, add a little weight next week.","Main lifts first. Warm-up: empty bar x10, ~40% x5, 60% x3, 75% x2, 85% x1 of working weight.","Week 4 is a deload; don't skip it or add weight. Afterwards test a new 1RM or rerun with updated numbers.","Missed rep on a main lift: finish remaining sets 5% lighter and repeat that week's weight next time."],"weeks":[{"week":1,"label":"Volume base","days":{"Monday":{"title":"Bench (Heavy)","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":4,"reps":"5","weight":"90 kg (80%)","targetKg":90.0,"pct1RM":80,"rpe":"7-8","rest":"3-4 min","main":true},{"name":"Incline DB Press","sets":3,"reps":"8-10","weight":"~30 kg DBs","targetKg":null,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Weighted Dips","sets":3,"reps":"8","weight":"+10-15 kg","targetKg":null,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Pec Deck","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Straight-Bar Triceps Pushdown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":3,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false}]},"Tuesday":{"title":"Squat (Heavy)","rest":false,"exercises":[{"name":"Back Squat","sets":4,"reps":"5","weight":"107.5 kg (80%)","targetKg":107.5,"pct1RM":80,"rpe":"7-8","rest":"3-4 min","main":true},{"name":"Hack Squat","sets":3,"reps":"8-10","weight":"moderate-heavy","targetKg":null,"pct1RM":null,"rpe":"8","rest":"2-3 min","main":false},{"name":"Leg Extension","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Seated Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Standing Calf Raise","sets":4,"reps":"10-12","weight":"heavy","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false},{"name":"Hanging Leg Raise","sets":3,"reps":"12","weight":"bodyweight","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false}]},"Wednesday":{"title":"Upper (Pull + Shoulders)","rest":false,"exercises":[{"name":"Weighted Pull-Up","sets":4,"reps":"6-8","weight":"+5-10 kg","targetKg":null,"pct1RM":null,"rpe":"8","rest":"2-3 min","main":false},{"name":"Barbell Row","sets":4,"reps":"8","weight":"70 kg","targetKg":70.0,"pct1RM":null,"rpe":"7-8","rest":"2 min","main":false},{"name":"Seated DB Shoulder Press","sets":3,"reps":"8-10","weight":"~24-28 kg DBs","targetKg":null,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Seated Cable Row","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Face Pull","sets":3,"reps":"15","weight":"light","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false},{"name":"Barbell Curl + Hammer Curl","sets":3,"reps":"10 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60-90 s","main":false}]},"Thursday":{"title":"Rest","rest":true,"exercises":[]},"Friday":{"title":"Deadlift (Heavy) + Squat (Technique)","rest":false,"exercises":[{"name":"Conventional Deadlift","sets":4,"reps":"4","weight":"132.5 kg (80%)","targetKg":132.5,"pct1RM":80,"rpe":"7-8","rest":"3-4 min","main":true},{"name":"Paused Back Squat (2 s pause)","sets":3,"reps":"4","weight":"87.5 kg (65%)","targetKg":87.5,"pct1RM":65,"rpe":"6-7","rest":"2-3 min","main":false},{"name":"Romanian Deadlift","sets":3,"reps":"8","weight":"100 kg","targetKg":100.0,"pct1RM":null,"rpe":"7-8","rest":"2 min","main":false},{"name":"Lying Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"45-Degree Back Extension","sets":3,"reps":"12","weight":"bodyweight / +plate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Cable Crunch","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false}]},"Saturday":{"title":"Bench (Volume) + Upper Accessories","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":4,"reps":"8","weight":"80 kg (71%)","targetKg":80.0,"pct1RM":71,"rpe":"7","rest":"2-3 min","main":true},{"name":"Close-Grip Bench Press","sets":3,"reps":"8","weight":"72.5 kg","targetKg":72.5,"pct1RM":null,"rpe":"7-8","rest":"2 min","main":false},{"name":"Chest-Supported Row","sets":3,"reps":"10","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Lat Pulldown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":3,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false},{"name":"EZ Curl + Rope Pushdown (superset)","sets":3,"reps":"12 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false}]},"Sunday":{"title":"Rest","rest":true,"exercises":[]}}},{"week":2,"label":"Build","days":{"Monday":{"title":"Bench (Heavy)","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":4,"reps":"4","weight":"92.5 kg (82%)","targetKg":92.5,"pct1RM":82,"rpe":"8","rest":"3-4 min","main":true},{"name":"Incline DB Press","sets":3,"reps":"8-10","weight":"~30 kg DBs","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"2 min","main":false},{"name":"Weighted Dips","sets":3,"reps":"8","weight":"+10-15 kg","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"2 min","main":false},{"name":"Pec Deck","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Straight-Bar Triceps Pushdown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":3,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false}]},"Tuesday":{"title":"Squat (Heavy)","rest":false,"exercises":[{"name":"Back Squat","sets":4,"reps":"4","weight":"112.5 kg (83%)","targetKg":112.5,"pct1RM":83,"rpe":"8","rest":"3-4 min","main":true},{"name":"Hack Squat","sets":3,"reps":"8-10","weight":"moderate-heavy","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"2-3 min","main":false},{"name":"Leg Extension","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Seated Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Standing Calf Raise","sets":4,"reps":"10-12","weight":"heavy","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false},{"name":"Hanging Leg Raise","sets":3,"reps":"12","weight":"bodyweight","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false}]},"Wednesday":{"title":"Upper (Pull + Shoulders)","rest":false,"exercises":[{"name":"Weighted Pull-Up","sets":4,"reps":"6-8","weight":"+5-10 kg","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"2-3 min","main":false},{"name":"Barbell Row","sets":4,"reps":"8","weight":"72.5 kg","targetKg":72.5,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Seated DB Shoulder Press","sets":3,"reps":"8-10","weight":"~24-28 kg DBs","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"2 min","main":false},{"name":"Seated Cable Row","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Face Pull","sets":3,"reps":"15","weight":"light","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false},{"name":"Barbell Curl + Hammer Curl","sets":3,"reps":"10 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60-90 s","main":false}]},"Thursday":{"title":"Rest","rest":true,"exercises":[]},"Friday":{"title":"Deadlift (Heavy) + Squat (Technique)","rest":false,"exercises":[{"name":"Conventional Deadlift","sets":4,"reps":"3","weight":"137.5 kg (83%)","targetKg":137.5,"pct1RM":83,"rpe":"8","rest":"3-4 min","main":true},{"name":"Paused Back Squat (2 s pause)","sets":3,"reps":"4","weight":"92.5 kg (69%)","targetKg":92.5,"pct1RM":69,"rpe":"7","rest":"2-3 min","main":false},{"name":"Romanian Deadlift","sets":3,"reps":"8","weight":"105 kg","targetKg":105.0,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Lying Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"45-Degree Back Extension","sets":3,"reps":"12","weight":"bodyweight / +plate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Cable Crunch","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false}]},"Saturday":{"title":"Bench (Volume) + Upper Accessories","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":4,"reps":"7","weight":"82.5 kg (73%)","targetKg":82.5,"pct1RM":73,"rpe":"7-8","rest":"2-3 min","main":true},{"name":"Close-Grip Bench Press","sets":3,"reps":"8","weight":"75 kg","targetKg":75.0,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Chest-Supported Row","sets":3,"reps":"10","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Lat Pulldown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":3,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false},{"name":"EZ Curl + Rope Pushdown (superset)","sets":3,"reps":"12 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false}]},"Sunday":{"title":"Rest","rest":true,"exercises":[]}}},{"week":3,"label":"Peak intensity","days":{"Monday":{"title":"Bench (Heavy)","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":4,"reps":"3","weight":"97.5 kg (87%)","targetKg":97.5,"pct1RM":87,"rpe":"8-9","rest":"3-4 min","main":true},{"name":"Incline DB Press","sets":3,"reps":"8-10","weight":"~30 kg DBs","targetKg":null,"pct1RM":null,"rpe":"9","rest":"2 min","main":false},{"name":"Weighted Dips","sets":3,"reps":"8","weight":"+10-15 kg","targetKg":null,"pct1RM":null,"rpe":"9","rest":"2 min","main":false},{"name":"Pec Deck","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Straight-Bar Triceps Pushdown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":3,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false}]},"Tuesday":{"title":"Squat (Heavy)","rest":false,"exercises":[{"name":"Back Squat","sets":4,"reps":"3","weight":"117.5 kg (87%)","targetKg":117.5,"pct1RM":87,"rpe":"8-9","rest":"3-4 min","main":true},{"name":"Hack Squat","sets":3,"reps":"8-10","weight":"moderate-heavy","targetKg":null,"pct1RM":null,"rpe":"9","rest":"2-3 min","main":false},{"name":"Leg Extension","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Seated Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Standing Calf Raise","sets":4,"reps":"10-12","weight":"heavy","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false},{"name":"Hanging Leg Raise","sets":3,"reps":"12","weight":"bodyweight","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false}]},"Wednesday":{"title":"Upper (Pull + Shoulders)","rest":false,"exercises":[{"name":"Weighted Pull-Up","sets":4,"reps":"6-8","weight":"+5-10 kg","targetKg":null,"pct1RM":null,"rpe":"9","rest":"2-3 min","main":false},{"name":"Barbell Row","sets":4,"reps":"8","weight":"75 kg","targetKg":75.0,"pct1RM":null,"rpe":"8-9","rest":"2 min","main":false},{"name":"Seated DB Shoulder Press","sets":3,"reps":"8-10","weight":"~24-28 kg DBs","targetKg":null,"pct1RM":null,"rpe":"9","rest":"2 min","main":false},{"name":"Seated Cable Row","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Face Pull","sets":3,"reps":"15","weight":"light","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false},{"name":"Barbell Curl + Hammer Curl","sets":3,"reps":"10 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60-90 s","main":false}]},"Thursday":{"title":"Rest","rest":true,"exercises":[]},"Friday":{"title":"Deadlift (Heavy) + Squat (Technique)","rest":false,"exercises":[{"name":"Conventional Deadlift","sets":3,"reps":"3","weight":"142.5 kg (86%)","targetKg":142.5,"pct1RM":86,"rpe":"8-9","rest":"3-4 min","main":true},{"name":"Paused Back Squat (2 s pause)","sets":3,"reps":"3","weight":"97.5 kg (72%)","targetKg":97.5,"pct1RM":72,"rpe":"7-8","rest":"2-3 min","main":false},{"name":"Romanian Deadlift","sets":3,"reps":"6","weight":"110 kg","targetKg":110.0,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Lying Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"45-Degree Back Extension","sets":3,"reps":"12","weight":"bodyweight / +plate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Cable Crunch","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false}]},"Saturday":{"title":"Bench (Volume) + Upper Accessories","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":4,"reps":"6","weight":"85 kg (76%)","targetKg":85.0,"pct1RM":76,"rpe":"8","rest":"2-3 min","main":true},{"name":"Close-Grip Bench Press","sets":3,"reps":"6","weight":"77.5 kg","targetKg":77.5,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Chest-Supported Row","sets":3,"reps":"10","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Lat Pulldown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":3,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false},{"name":"EZ Curl + Rope Pushdown (superset)","sets":3,"reps":"12 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false}]},"Sunday":{"title":"Rest","rest":true,"exercises":[]}}},{"week":4,"label":"Deload","days":{"Monday":{"title":"Bench (Heavy)","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":3,"reps":"3","weight":"77.5 kg (69%)","targetKg":77.5,"pct1RM":69,"rpe":"6","rest":"3-4 min","main":true},{"name":"Incline DB Press","sets":2,"reps":"8-10","weight":"~30 kg DBs","targetKg":null,"pct1RM":null,"rpe":"7","rest":"2 min","main":false},{"name":"Weighted Dips","sets":2,"reps":"8","weight":"+10-15 kg","targetKg":null,"pct1RM":null,"rpe":"7","rest":"2 min","main":false},{"name":"Pec Deck","sets":2,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Straight-Bar Triceps Pushdown","sets":2,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":2,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false}]},"Tuesday":{"title":"Squat (Heavy)","rest":false,"exercises":[{"name":"Back Squat","sets":3,"reps":"3","weight":"95 kg (70%)","targetKg":95.0,"pct1RM":70,"rpe":"6","rest":"3-4 min","main":true},{"name":"Hack Squat","sets":2,"reps":"8-10","weight":"moderate-heavy","targetKg":null,"pct1RM":null,"rpe":"7","rest":"2-3 min","main":false},{"name":"Leg Extension","sets":2,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Seated Leg Curl","sets":2,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Standing Calf Raise","sets":3,"reps":"10-12","weight":"heavy","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false},{"name":"Hanging Leg Raise","sets":2,"reps":"12","weight":"bodyweight","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false}]},"Wednesday":{"title":"Upper (Pull + Shoulders)","rest":false,"exercises":[{"name":"Weighted Pull-Up","sets":3,"reps":"6-8","weight":"+5-10 kg","targetKg":null,"pct1RM":null,"rpe":"7","rest":"2-3 min","main":false},{"name":"Barbell Row","sets":3,"reps":"8","weight":"60 kg","targetKg":60.0,"pct1RM":null,"rpe":"6","rest":"2 min","main":false},{"name":"Seated DB Shoulder Press","sets":2,"reps":"8-10","weight":"~24-28 kg DBs","targetKg":null,"pct1RM":null,"rpe":"7","rest":"2 min","main":false},{"name":"Seated Cable Row","sets":2,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Face Pull","sets":2,"reps":"15","weight":"light","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false},{"name":"Barbell Curl + Hammer Curl","sets":2,"reps":"10 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60-90 s","main":false}]},"Thursday":{"title":"Rest","rest":true,"exercises":[]},"Friday":{"title":"Deadlift (Heavy) + Squat (Technique)","rest":false,"exercises":[{"name":"Conventional Deadlift","sets":3,"reps":"2","weight":"115 kg (70%)","targetKg":115.0,"pct1RM":70,"rpe":"6","rest":"3-4 min","main":true},{"name":"Paused Back Squat (2 s pause)","sets":2,"reps":"4","weight":"80 kg (59%)","targetKg":80.0,"pct1RM":59,"rpe":"6","rest":"2-3 min","main":false},{"name":"Romanian Deadlift","sets":2,"reps":"8","weight":"90 kg","targetKg":90.0,"pct1RM":null,"rpe":"6","rest":"2 min","main":false},{"name":"Lying Leg Curl","sets":2,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"45-Degree Back Extension","sets":2,"reps":"12","weight":"bodyweight / +plate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Cable Crunch","sets":2,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false}]},"Saturday":{"title":"Bench (Volume) + Upper Accessories","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":3,"reps":"6","weight":"72.5 kg (64%)","targetKg":72.5,"pct1RM":64,"rpe":"6","rest":"2-3 min","main":true},{"name":"Close-Grip Bench Press","sets":2,"reps":"8","weight":"65 kg","targetKg":65.0,"pct1RM":null,"rpe":"6","rest":"2 min","main":false},{"name":"Chest-Supported Row","sets":2,"reps":"10","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Lat Pulldown","sets":2,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":2,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false},{"name":"EZ Curl + Rope Pushdown (superset)","sets":2,"reps":"12 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false}]},"Sunday":{"title":"Rest","rest":true,"exercises":[]}}}]}, aggressive: {"name":"Aggressive 4-Week Peak","id":"aggressive","oneRM":{"bench":112.5,"squat":135,"deadlift":165},"units":"kg","goal":{"bench":"117.5-120","squat":"142.5-145","deadlift":"172.5-175"},"notes":["Each heavy day opens with a top single at the listed RPE, then back-off sets. If the single moves faster than the RPE says, add 2.5 kg next week; if it's slower, keep the weight.","Bench is trained three times a week (heavy Mon, paused Wed, volume Sat). That frequency is where most of the extra bench progress comes from.","Accessories are trimmed a little to leave energy for the heavier main work. Same rule as before: hit the top of the rep range on all sets, then add weight.","Missed reps on a back-off set: drop 5% for the remaining sets and repeat that week's weights next time. Two missed sessions in a row means switch back to the standard plan.","Week 4 is a taper, not a deload: heavy-ish singles, very little volume. Test 1RMs in week 5: Monday bench, Tuesday squat, Friday deadlift.","Testing: work up to a single at about 90% of your old max, then try your goal, then add 2.5 kg only if the goal moved fast.","Sleep 8 hours and eat at or slightly above maintenance. This block does not work in a calorie deficit."],"weeks":[{"week":1,"label":"Intensify","days":{"Monday":{"title":"Bench (Heavy)","rest":false,"exercises":[{"name":"Barbell Bench Press (top single)","sets":1,"reps":"1","weight":"100 kg (89%)","targetKg":100,"pct1RM":89,"rpe":"7","rest":"3-5 min","main":true},{"name":"Barbell Bench Press","sets":5,"reps":"4","weight":"92.5 kg (82%)","targetKg":92.5,"pct1RM":82,"rpe":"7-8","rest":"3-4 min","main":true},{"name":"Incline DB Press","sets":3,"reps":"8-10","weight":"~30 kg DBs","targetKg":null,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Weighted Dips","sets":3,"reps":"8","weight":"+10-15 kg","targetKg":null,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Pec Deck","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Straight-Bar Triceps Pushdown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false}]},"Tuesday":{"title":"Squat (Heavy)","rest":false,"exercises":[{"name":"Back Squat (top single)","sets":1,"reps":"1","weight":"120 kg (89%)","targetKg":120,"pct1RM":89,"rpe":"7","rest":"3-5 min","main":true},{"name":"Back Squat","sets":5,"reps":"4","weight":"112.5 kg (83%)","targetKg":112.5,"pct1RM":83,"rpe":"7-8","rest":"3-4 min","main":true},{"name":"Hack Squat","sets":3,"reps":"8-10","weight":"moderate-heavy","targetKg":null,"pct1RM":null,"rpe":"8","rest":"2-3 min","main":false},{"name":"Leg Extension","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Seated Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Standing Calf Raise","sets":4,"reps":"10-12","weight":"heavy","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false}]},"Wednesday":{"title":"Upper (Pull) + Paused Bench","rest":false,"exercises":[{"name":"Paused Bench Press (2 s pause)","sets":3,"reps":"4","weight":"87.5 kg (78%)","targetKg":87.5,"pct1RM":78,"rpe":"7","rest":"2-3 min","main":true},{"name":"Weighted Pull-Up","sets":4,"reps":"6-8","weight":"+5-10 kg","targetKg":null,"pct1RM":null,"rpe":"8","rest":"2-3 min","main":false},{"name":"Barbell Row","sets":4,"reps":"6","weight":"75 kg","targetKg":75,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Seated Cable Row","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Face Pull","sets":3,"reps":"15","weight":"light","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false},{"name":"Barbell Curl + Hammer Curl","sets":3,"reps":"10 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60-90 s","main":false}]},"Thursday":{"title":"Rest","rest":true,"exercises":[]},"Friday":{"title":"Deadlift (Heavy) + Paused Squat","rest":false,"exercises":[{"name":"Conventional Deadlift (top single)","sets":1,"reps":"1","weight":"147.5 kg (89%)","targetKg":147.5,"pct1RM":89,"rpe":"7","rest":"3-5 min","main":true},{"name":"Conventional Deadlift","sets":4,"reps":"3","weight":"140 kg (85%)","targetKg":140,"pct1RM":85,"rpe":"7-8","rest":"3-4 min","main":true},{"name":"Paused Back Squat (2 s pause)","sets":4,"reps":"4","weight":"95 kg (70%)","targetKg":95,"pct1RM":70,"rpe":"7","rest":"2-3 min","main":true},{"name":"Romanian Deadlift","sets":3,"reps":"6","weight":"110 kg","targetKg":110,"pct1RM":null,"rpe":"7-8","rest":"2 min","main":false},{"name":"Lying Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"45-Degree Back Extension","sets":3,"reps":"12","weight":"bodyweight / +plate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Cable Crunch","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false}]},"Saturday":{"title":"Bench (Volume) + Upper Accessories","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":5,"reps":"6","weight":"85 kg (76%)","targetKg":85,"pct1RM":76,"rpe":"7-8","rest":"2-3 min","main":true},{"name":"Close-Grip Bench Press","sets":4,"reps":"6","weight":"80 kg","targetKg":80,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Chest-Supported Row","sets":3,"reps":"10","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"Lat Pulldown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":3,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false},{"name":"EZ Curl + Rope Pushdown (superset)","sets":3,"reps":"12 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8","rest":"60 s","main":false}]},"Sunday":{"title":"Rest","rest":true,"exercises":[]}}},{"week":2,"label":"Overload","days":{"Monday":{"title":"Bench (Heavy)","rest":false,"exercises":[{"name":"Barbell Bench Press (top single)","sets":1,"reps":"1","weight":"102.5 kg (91%)","targetKg":102.5,"pct1RM":91,"rpe":"7-8","rest":"3-5 min","main":true},{"name":"Barbell Bench Press","sets":5,"reps":"3","weight":"97.5 kg (87%)","targetKg":97.5,"pct1RM":87,"rpe":"8","rest":"3-4 min","main":true},{"name":"Incline DB Press","sets":3,"reps":"8-10","weight":"~30 kg DBs","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"2 min","main":false},{"name":"Weighted Dips","sets":3,"reps":"8","weight":"+10-15 kg","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"2 min","main":false},{"name":"Pec Deck","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Straight-Bar Triceps Pushdown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false}]},"Tuesday":{"title":"Squat (Heavy)","rest":false,"exercises":[{"name":"Back Squat (top single)","sets":1,"reps":"1","weight":"122.5 kg (91%)","targetKg":122.5,"pct1RM":91,"rpe":"7-8","rest":"3-5 min","main":true},{"name":"Back Squat","sets":5,"reps":"3","weight":"117.5 kg (87%)","targetKg":117.5,"pct1RM":87,"rpe":"8","rest":"3-4 min","main":true},{"name":"Hack Squat","sets":3,"reps":"8-10","weight":"moderate-heavy","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"2-3 min","main":false},{"name":"Leg Extension","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Seated Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Standing Calf Raise","sets":4,"reps":"10-12","weight":"heavy","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false}]},"Wednesday":{"title":"Upper (Pull) + Paused Bench","rest":false,"exercises":[{"name":"Paused Bench Press (2 s pause)","sets":3,"reps":"3","weight":"90 kg (80%)","targetKg":90,"pct1RM":80,"rpe":"7-8","rest":"2-3 min","main":true},{"name":"Weighted Pull-Up","sets":4,"reps":"6-8","weight":"+5-10 kg","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"2-3 min","main":false},{"name":"Barbell Row","sets":4,"reps":"6","weight":"77.5 kg","targetKg":77.5,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Seated Cable Row","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Face Pull","sets":3,"reps":"15","weight":"light","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false},{"name":"Barbell Curl + Hammer Curl","sets":3,"reps":"10 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60-90 s","main":false}]},"Thursday":{"title":"Rest","rest":true,"exercises":[]},"Friday":{"title":"Deadlift (Heavy) + Paused Squat","rest":false,"exercises":[{"name":"Conventional Deadlift (top single)","sets":1,"reps":"1","weight":"150 kg (91%)","targetKg":150,"pct1RM":91,"rpe":"7-8","rest":"3-5 min","main":true},{"name":"Conventional Deadlift","sets":4,"reps":"2","weight":"145 kg (88%)","targetKg":145,"pct1RM":88,"rpe":"8","rest":"3-4 min","main":true},{"name":"Paused Back Squat (2 s pause)","sets":4,"reps":"3","weight":"100 kg (74%)","targetKg":100,"pct1RM":74,"rpe":"7-8","rest":"2-3 min","main":true},{"name":"Romanian Deadlift","sets":3,"reps":"6","weight":"115 kg","targetKg":115,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Lying Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"45-Degree Back Extension","sets":3,"reps":"12","weight":"bodyweight / +plate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Cable Crunch","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false}]},"Saturday":{"title":"Bench (Volume) + Upper Accessories","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":5,"reps":"5","weight":"87.5 kg (78%)","targetKg":87.5,"pct1RM":78,"rpe":"8","rest":"2-3 min","main":true},{"name":"Close-Grip Bench Press","sets":4,"reps":"6","weight":"82.5 kg","targetKg":82.5,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Chest-Supported Row","sets":3,"reps":"10","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"Lat Pulldown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":3,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false},{"name":"EZ Curl + Rope Pushdown (superset)","sets":3,"reps":"12 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"8-9","rest":"60 s","main":false}]},"Sunday":{"title":"Rest","rest":true,"exercises":[]}}},{"week":3,"label":"Peak","days":{"Monday":{"title":"Bench (Heavy)","rest":false,"exercises":[{"name":"Barbell Bench Press (top single)","sets":1,"reps":"1","weight":"105 kg (93%)","targetKg":105,"pct1RM":93,"rpe":"8-9","rest":"3-5 min","main":true},{"name":"Barbell Bench Press","sets":4,"reps":"2","weight":"100 kg (89%)","targetKg":100,"pct1RM":89,"rpe":"8-9","rest":"3-4 min","main":true},{"name":"Incline DB Press","sets":3,"reps":"8-10","weight":"~30 kg DBs","targetKg":null,"pct1RM":null,"rpe":"9","rest":"2 min","main":false},{"name":"Weighted Dips","sets":3,"reps":"8","weight":"+10-15 kg","targetKg":null,"pct1RM":null,"rpe":"9","rest":"2 min","main":false},{"name":"Pec Deck","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Straight-Bar Triceps Pushdown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false}]},"Tuesday":{"title":"Squat (Heavy)","rest":false,"exercises":[{"name":"Back Squat (top single)","sets":1,"reps":"1","weight":"125 kg (93%)","targetKg":125,"pct1RM":93,"rpe":"8-9","rest":"3-5 min","main":true},{"name":"Back Squat","sets":4,"reps":"2","weight":"120 kg (89%)","targetKg":120,"pct1RM":89,"rpe":"8-9","rest":"3-4 min","main":true},{"name":"Hack Squat","sets":3,"reps":"8-10","weight":"moderate-heavy","targetKg":null,"pct1RM":null,"rpe":"9","rest":"2-3 min","main":false},{"name":"Leg Extension","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Seated Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Standing Calf Raise","sets":4,"reps":"10-12","weight":"heavy","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false}]},"Wednesday":{"title":"Upper (Pull) + Paused Bench","rest":false,"exercises":[{"name":"Paused Bench Press (2 s pause)","sets":3,"reps":"3","weight":"92.5 kg (82%)","targetKg":92.5,"pct1RM":82,"rpe":"8","rest":"2-3 min","main":true},{"name":"Weighted Pull-Up","sets":4,"reps":"6-8","weight":"+5-10 kg","targetKg":null,"pct1RM":null,"rpe":"9","rest":"2-3 min","main":false},{"name":"Barbell Row","sets":4,"reps":"6","weight":"80 kg","targetKg":80,"pct1RM":null,"rpe":"8-9","rest":"2 min","main":false},{"name":"Seated Cable Row","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Face Pull","sets":3,"reps":"15","weight":"light","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false},{"name":"Barbell Curl + Hammer Curl","sets":3,"reps":"10 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60-90 s","main":false}]},"Thursday":{"title":"Rest","rest":true,"exercises":[]},"Friday":{"title":"Deadlift (Heavy) + Paused Squat","rest":false,"exercises":[{"name":"Conventional Deadlift (top single)","sets":1,"reps":"1","weight":"155 kg (94%)","targetKg":155,"pct1RM":94,"rpe":"8-9","rest":"3-5 min","main":true},{"name":"Conventional Deadlift","sets":3,"reps":"2","weight":"147.5 kg (89%)","targetKg":147.5,"pct1RM":89,"rpe":"8-9","rest":"3-4 min","main":true},{"name":"Paused Back Squat (2 s pause)","sets":3,"reps":"3","weight":"105 kg (78%)","targetKg":105,"pct1RM":78,"rpe":"8","rest":"2-3 min","main":true},{"name":"Romanian Deadlift","sets":3,"reps":"5","weight":"120 kg","targetKg":120,"pct1RM":null,"rpe":"8","rest":"2 min","main":false},{"name":"Lying Leg Curl","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"45-Degree Back Extension","sets":3,"reps":"12","weight":"bodyweight / +plate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Cable Crunch","sets":3,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false}]},"Saturday":{"title":"Bench (Volume) + Upper Accessories","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":4,"reps":"5","weight":"90 kg (80%)","targetKg":90,"pct1RM":80,"rpe":"8-9","rest":"2-3 min","main":true},{"name":"Close-Grip Bench Press","sets":4,"reps":"5","weight":"85 kg","targetKg":85,"pct1RM":null,"rpe":"8-9","rest":"2 min","main":false},{"name":"Chest-Supported Row","sets":3,"reps":"10","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"Lat Pulldown","sets":3,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":3,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false},{"name":"EZ Curl + Rope Pushdown (superset)","sets":3,"reps":"12 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"9","rest":"60 s","main":false}]},"Sunday":{"title":"Rest","rest":true,"exercises":[]}}},{"week":4,"label":"Taper (test in week 5)","days":{"Monday":{"title":"Bench (Heavy)","rest":false,"exercises":[{"name":"Barbell Bench Press (top single)","sets":1,"reps":"1","weight":"97.5 kg (87%)","targetKg":97.5,"pct1RM":87,"rpe":"7","rest":"3-5 min","main":true},{"name":"Barbell Bench Press","sets":3,"reps":"2","weight":"90 kg (80%)","targetKg":90,"pct1RM":80,"rpe":"6","rest":"3-4 min","main":true},{"name":"Incline DB Press","sets":2,"reps":"8-10","weight":"~30 kg DBs","targetKg":null,"pct1RM":null,"rpe":"7","rest":"2 min","main":false},{"name":"Weighted Dips","sets":2,"reps":"8","weight":"+10-15 kg","targetKg":null,"pct1RM":null,"rpe":"7","rest":"2 min","main":false},{"name":"Pec Deck","sets":2,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Straight-Bar Triceps Pushdown","sets":2,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false}]},"Tuesday":{"title":"Squat (Heavy)","rest":false,"exercises":[{"name":"Back Squat (top single)","sets":1,"reps":"1","weight":"117.5 kg (87%)","targetKg":117.5,"pct1RM":87,"rpe":"7","rest":"3-5 min","main":true},{"name":"Back Squat","sets":3,"reps":"2","weight":"107.5 kg (80%)","targetKg":107.5,"pct1RM":80,"rpe":"6","rest":"3-4 min","main":true},{"name":"Hack Squat","sets":2,"reps":"8-10","weight":"moderate-heavy","targetKg":null,"pct1RM":null,"rpe":"7","rest":"2-3 min","main":false},{"name":"Leg Extension","sets":2,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Seated Leg Curl","sets":2,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Standing Calf Raise","sets":3,"reps":"10-12","weight":"heavy","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false}]},"Wednesday":{"title":"Upper (Pull) + Paused Bench","rest":false,"exercises":[{"name":"Paused Bench Press (2 s pause)","sets":2,"reps":"3","weight":"80 kg (71%)","targetKg":80,"pct1RM":71,"rpe":"6","rest":"2-3 min","main":true},{"name":"Weighted Pull-Up","sets":3,"reps":"6-8","weight":"+5-10 kg","targetKg":null,"pct1RM":null,"rpe":"7","rest":"2-3 min","main":false},{"name":"Barbell Row","sets":3,"reps":"6","weight":"65 kg","targetKg":65,"pct1RM":null,"rpe":"6","rest":"2 min","main":false},{"name":"Seated Cable Row","sets":2,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Face Pull","sets":2,"reps":"15","weight":"light","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false},{"name":"Barbell Curl + Hammer Curl","sets":2,"reps":"10 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60-90 s","main":false}]},"Thursday":{"title":"Rest","rest":true,"exercises":[]},"Friday":{"title":"Deadlift (Heavy) + Paused Squat","rest":false,"exercises":[{"name":"Conventional Deadlift (top single)","sets":1,"reps":"1","weight":"142.5 kg (86%)","targetKg":142.5,"pct1RM":86,"rpe":"7","rest":"3-5 min","main":true},{"name":"Conventional Deadlift","sets":2,"reps":"2","weight":"130 kg (79%)","targetKg":130,"pct1RM":79,"rpe":"6","rest":"3-4 min","main":true},{"name":"Paused Back Squat (2 s pause)","sets":2,"reps":"3","weight":"87.5 kg (65%)","targetKg":87.5,"pct1RM":65,"rpe":"6","rest":"2-3 min","main":true},{"name":"Romanian Deadlift","sets":2,"reps":"6","weight":"95 kg","targetKg":95,"pct1RM":null,"rpe":"6","rest":"2 min","main":false},{"name":"Lying Leg Curl","sets":2,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"45-Degree Back Extension","sets":2,"reps":"12","weight":"bodyweight / +plate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Cable Crunch","sets":2,"reps":"12-15","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false}]},"Saturday":{"title":"Bench (Volume) + Upper Accessories","rest":false,"exercises":[{"name":"Barbell Bench Press","sets":3,"reps":"5","weight":"77.5 kg (69%)","targetKg":77.5,"pct1RM":69,"rpe":"6","rest":"2-3 min","main":true},{"name":"Close-Grip Bench Press","sets":2,"reps":"6","weight":"70 kg","targetKg":70,"pct1RM":null,"rpe":"6","rest":"2 min","main":false},{"name":"Chest-Supported Row","sets":2,"reps":"10","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"Lat Pulldown","sets":2,"reps":"10-12","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"90 s","main":false},{"name":"DB Lateral Raise","sets":2,"reps":"15","weight":"~8-10 kg","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false},{"name":"EZ Curl + Rope Pushdown (superset)","sets":2,"reps":"12 each","weight":"moderate","targetKg":null,"pct1RM":null,"rpe":"7","rest":"60 s","main":false}]},"Sunday":{"title":"Rest","rest":true,"exercises":[]}}}]}};
+const PLAN_NAMES = {standard: "Standard powerbuilding", aggressive: "Aggressive peak"};
+let PLAN = PLANS.aggressive;
+const planKey = () => (docs.settings && PLANS[docs.settings.plan]) ? docs.settings.plan : "aggressive";
+function applyPlan(){ PLAN = PLANS[planKey()]; }
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const SHORT = {Monday:"Mon",Tuesday:"Tue",Wednesday:"Wed",Thursday:"Thu",Friday:"Fri",Saturday:"Sat",Sunday:"Sun"};
+const LS_KEY = "pbLog.docs.v1";
+
+/* ---------- dates ---------- */
+const iso = d => { const z = new Date(d.getTime() - d.getTimezoneOffset()*6e4); return z.toISOString().slice(0,10); };
+const parseISO = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const addDays = (s, n) => { const d = parseISO(s); d.setDate(d.getDate()+n); return iso(d); };
+const dayName = s => DAYS[(parseISO(s).getDay()+6)%7];
+const mondayOf = s => addDays(s, -((parseISO(s).getDay()+6)%7));
+const fmtDate = s => parseISO(s).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"});
+const TODAY = iso(new Date());
+
+/* ---------- storage: db when the viewer grants it, this phone's storage otherwise ---------- */
+const docs = {};               // id -> data
+let col = null;                // db collection for this person
+let syncMsg = "Saved on this phone";
+function readLocal(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } }
+function writeLocal(){ try { localStorage.setItem(LS_KEY, JSON.stringify(docs)); } catch {} }
+Object.assign(docs, readLocal());
+
+const pending = {}, timers = {}, inflight = {};
+function save(id, data){
+  docs[id] = data; writeLocal();
+  if (!col) return;
+  pending[id] = data; clearTimeout(timers[id]);
+  timers[id] = setTimeout(() => flush(id), 700);
+}
+async function flush(id){
+  if (inflight[id]) { timers[id] = setTimeout(() => flush(id), 400); return; }
+  const d = pending[id]; if (!d) return; delete pending[id];
+  inflight[id] = true; setSync("Saving…");
+  try { await col.doc(id).set(JSON.parse(JSON.stringify(d))); setSync("Synced"); }
+  catch (e) { setSync(e && e.code === "quota_exceeded" ? "Storage full: delete old sessions" : "Saved on this phone, sync failed"); }
+  inflight[id] = false;
+}
+async function removeDoc(id){
+  delete docs[id]; writeLocal();
+  if (col) { try { await col.doc(id).delete(); } catch {} }
+}
+function setSync(m){ syncMsg = m; const el = document.getElementById("sync"); if (el) el.textContent = m; }
+
+async function connectDb(){
+  try {
+    if (!window.claude || !window.claude.use) return;
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    const uid = user && await user.id();
+    if (!db || !uid) return;
+    const c = db.collection("data/users/" + uid);
+    const snap = await c.get();
+    const remote = {};
+    snap.docs.forEach(d => { if (d.exists) remote[d.id] = d.data(); });
+    col = c;
+    // anything only on this phone gets pushed up; the synced copy wins otherwise
+    for (const [id, d] of Object.entries(docs)) if (!remote[id]) save(id, d);
+    Object.assign(docs, JSON.parse(JSON.stringify(remote)));
+    writeLocal();
+    setSync("Synced"); applyPlan();
+    if (!state.dirty) { state.session = null; render(); }
+  } catch { /* stay on local storage */ }
+}
+
+/* ---------- model ---------- */
+const settings = () => docs.settings || null;
+const bwEntries = () => (docs.bodyweight && docs.bodyweight.entries) || {};
+const sessions = () => Object.entries(docs).filter(([,d]) => d && d.type === "session").map(([id,d]) => ({id, ...d})).sort((a,b) => (b.date+b.day).localeCompare(a.date+a.day));
+
+function ensureSettings(){
+  if (!docs.settings) save("settings", {type:"settings", cycleStart: mondayOf(TODAY), plan: "aggressive"});
+  applyPlan();
+}
+function blockWeekFor(date){
+  const s = settings(); if (!s) return {week:1, block:1};
+  const w = Math.floor((parseISO(date) - parseISO(s.cycleStart)) / (7*864e5));
+  return {week: ((w % 4) + 4) % 4 + 1, block: Math.floor(w / 4) + 1};
+}
+const planDay = (week, day) => PLAN.weeks[week-1].days[day];
+/* maxes: your own numbers override the plan's; barbell loads scale with them */
+const LIFTS = ["bench","squat","deadlift"];
+const maxes = () => ({...PLAN.oneRM, ...((docs.settings && docs.settings.maxes) || {})});
+function liftOf(name){
+  if (/bench/i.test(name)) return "bench";
+  if (/deadlift/i.test(name)) return "deadlift";
+  if (/squat/i.test(name) && !/hack/i.test(name)) return "squat";
+  return null;
+}
+const r25 = n => Math.round(n/2.5)*2.5;
+/* ranks: estimated 1RM divided by bodyweight; 8 tiers, each below Legend split into divisions III, II, I */
+const TIERS = [{k:"gold",n:"Gold",a:"G"},{k:"plat",n:"Platinum",a:"P"},{k:"dia",n:"Diamond",a:"D"},{k:"master",n:"Master",a:"M"},{k:"gm",n:"Grandmaster",a:"GM"},{k:"champ",n:"Champion",a:"C"},{k:"titan",n:"Titan",a:"T"},{k:"legend",n:"Legend",a:"L"}];
+// ×bodyweight needed to enter Platinum … Legend
+const STD = {bench:[0.75,1,1.25,1.5,1.75,2,2.25], squat:[1,1.25,1.5,1.85,2.2,2.5,2.85], deadlift:[1.25,1.5,1.85,2.2,2.5,2.8,3.15]};
+const DIVS = ["III","II","I"];
+function ladder(lift){
+  const s = STD[lift], starts = [s[0]*0.6, ...s], out = [];
+  TIERS.forEach((tr, i) => {
+    if (tr.k === "legend") { out.push({...tr, div:"", min:starts[i]}); return; }
+    const lo = starts[i], hi = starts[i+1];
+    DIVS.forEach((d, j) => out.push({...tr, div:d, min: lo + (hi-lo)*j/3}));
+  });
+  return out;
+}
+const LADDER = Object.fromEntries(["bench","squat","deadlift"].map(l => [l, ladder(l)]));
+const rankLift = name => /close-grip|romanian/i.test(name) ? null : liftOf(name);
+function bwOn(date){
+  const e = bwEntries(), ks = Object.keys(e).sort(); if (!ks.length) return null;
+  const before = ks.filter(d => d <= date); return e[before.length ? before[before.length-1] : ks[0]];
+}
+function rankIndex(lift, e1, bw){ const r = e1/bw, L = LADDER[lift]; let i = 0; while (i+1 < L.length && r >= L[i+1].min) i++; return i; }
+function tierFor(lift, e1, bw){
+  if (!lift || !bw || !(e1 > 0)) return null;
+  return LADDER[lift][rankIndex(lift, e1, bw)];
+}
+const rankName = r => r.div ? `${r.n} ${r.div}` : r.n;
+/* every exercise gets a ladder: Platinum entry and Legend entry, evenly spaced between
+   basis "ratio": estimated max ÷ bodyweight · "added": (bodyweight + added kg) estimated max ÷ bodyweight · "reps": reps in one set */
+const lin = (p, l) => Array.from({length:7}, (_, k) => +(p + (l-p)*k/6).toFixed(3));
+const EX_STD = {
+  "Incline DB Press": {s:lin(.2,.75), note:"weight of one dumbbell"},
+  "Weighted Dips": {basis:"added", s:lin(1.15,2.1)},
+  "Pec Deck": {s:lin(.5,1.6), note:"stack weight; machines vary"},
+  "Straight-Bar Triceps Pushdown": {s:lin(.3,1)},
+  "DB Lateral Raise": {s:lin(.08,.4), note:"weight of one dumbbell"},
+  "Hack Squat": {s:lin(.75,3), note:"plates loaded on the sled"},
+  "Leg Extension": {s:lin(.5,1.75), note:"stack weight; machines vary"},
+  "Seated Leg Curl": {s:lin(.4,1.5), note:"stack weight; machines vary"},
+  "Standing Calf Raise": {s:lin(.75,3)},
+  "Hanging Leg Raise": {basis:"reps", s:lin(8,30)},
+  "Weighted Pull-Up": {basis:"added", s:lin(1.15,2)},
+  "Barbell Row": {s:lin(.6,1.6)},
+  "Seated DB Shoulder Press": {s:lin(.2,.65), note:"weight of one dumbbell"},
+  "Seated Cable Row": {s:lin(.5,1.6)},
+  "Face Pull": {s:lin(.2,.85)},
+  "Barbell Curl + Hammer Curl": {s:lin(.3,.95), note:"barbell curl weight"},
+  "Romanian Deadlift": {s:lin(1,2.75)},
+  "Lying Leg Curl": {s:lin(.3,1.2), note:"stack weight; machines vary"},
+  "45-Degree Back Extension": {basis:"added", s:lin(1.2,2.2), note:"leave kg empty for bodyweight only"},
+  "Cable Crunch": {s:lin(.4,1.6)},
+  "Close-Grip Bench Press": {s:lin(.65,1.9)},
+  "Chest-Supported Row": {s:lin(.4,1.3), note:"total weight moved"},
+  "Lat Pulldown": {s:lin(.55,1.5)},
+  "EZ Curl + Rope Pushdown (superset)": {s:lin(.3,.95), note:"EZ curl weight"},
+  _generic: {s:lin(.4,1.5), note:"general standard for exercises not in the plan"}
+};
+const baseName = n => String(n).replace(/ \(top single\)$/, "");
+function stdFor(name){
+  const b = baseName(name), big = /close-grip|romanian|hack/i.test(b) ? null : liftOf(b);
+  if (big) return {key:big, basis:"ratio", s:STD[big], note: /paused/i.test(b) ? `ranked on the ${big} ladder` : ""};
+  const d = EX_STD[b] || EX_STD._generic;
+  return {key: EX_STD[b] ? b : "_generic", basis:"ratio", note:"", ...d};
+}
+const LAD_CACHE = {};
+function ladderOf(std){
+  if (LAD_CACHE[std.key]) return LAD_CACHE[std.key];
+  const starts = [std.s[0]*0.6, ...std.s], out = [];
+  TIERS.forEach((tr, i) => {
+    if (tr.k === "legend") { out.push({...tr, div:"", min:starts[i]}); return; }
+    const lo = starts[i], hi = starts[i+1];
+    DIVS.forEach((d, j) => out.push({...tr, div:d, min: lo + (hi-lo)*j/3}));
+  });
+  return LAD_CACHE[std.key] = out;
+}
+// score of one set on its exercise's basis (x is compared with ladder mins)
+function setScore(std, st, bw){
+  const kg = parseFloat(st.kg) || 0, reps = +st.reps, rpe = +st.rpe;
+  if (!(reps > 0)) return null;
+  if (std.basis === "reps"){ const r = reps + (rpe >= 5 && rpe <= 10 ? 10 - rpe : 0); return {x:r, label:`${r} reps (counting reps left)`}; }
+  if (!bw) return null;
+  const load = std.basis === "added" ? bw + kg : kg, e = e1rm(load, reps, rpe);
+  if (!(e > 0)) return null;
+  return {x:e/bw, e, label: std.basis === "added" ? `about +${round1(e - bw)} kg for one rep` : `about ${round1(e)} kg max`};
+}
+function rankAt(L, x){ let i = 0; while (i+1 < L.length && x >= L[i+1].min) i++; return i; }
+// what a rank needs, in the units the person logs
+function needFor(std, min, bw){
+  if (std.basis === "reps") return `${Math.ceil(min)} reps`;
+  const e = min*bw, five = e/(1+7/30);
+  return std.basis === "added" ? `+${Math.max(0, r25(five - bw))} kg × 5 @ RPE 8` : `${r25(five)} kg × 5 @ RPE 8`;
+}
+function exHistory(name){
+  const b = baseName(name), std = stdFor(b), L = ladderOf(std), out = [];
+  for (const s of sessions()){
+    const bw = bwOn(s.date);
+    const sets = (s.exercises||[]).filter(e => baseName(e.name) === b).flatMap(e => e.sets).filter(x => x.done);
+    let best = null;
+    for (const st of sets){ const sc = setScore(std, st, bw); if (sc && (!best || sc.x > best.sc.x)) best = {sc, st}; }
+    if (best) out.push({date:s.date, bw, st:best.st, sc:best.sc, rank:L[rankAt(L, best.sc.x)], i:rankAt(L, best.sc.x)});
+  }
+  return out;
+}
+const medal = (tier, label, name) => {
+  if (!tier) return `<span></span>`;
+  const inner = `<b>${tier.a}</b>${tier.div ? `<i>${tier.div}</i>` : ""}`, l = esc(label || rankName(tier));
+  return name ? `<button type="button" class="medal m-${tier.k}" data-act="expage" data-name="${esc(name)}" title="${l}" aria-label="${l}, open ranks for ${esc(name)}">${inner}</button>` : `<span class="medal m-${tier.k}" title="${l}" aria-label="${l}">${inner}</span>`;
+};
+function scaleEx(e){
+  const lift = liftOf(e.name);
+  if (e.targetKg == null || !lift) return e;
+  const kg = r25(e.targetKg * maxes()[lift] / PLAN.oneRM[lift]);
+  if (kg === e.targetKg) return e;
+  const pct = e.pct1RM ? ` (${Math.round(kg / maxes()[lift] * 100)}%)` : "";
+  return {...e, targetKg: kg, weight: `${kg} kg${pct}`};
+}
+
+function firstNum(s){ const m = String(s||"").match(/[\d.]+/); return m ? m[0] : ""; }
+function restSecs(s){
+  s = String(s||""); const n = parseFloat(firstNum(s)) || 90;
+  return /min/.test(s) ? n*60 : n;
+}
+function newSet(){ return {kg:"", reps:"", rpe:"", done:false}; }
+function buildSession(week, day, date){
+  const pd = planDay(week, day);
+  return {type:"session", date, day, week, title: pd.title, started: Date.now(), finished: false, notes:"",
+    exercises: pd.exercises.map(scaleEx).map(e => ({name:e.name, main:e.main, plan:{sets:e.sets, reps:e.reps, weight:e.weight, targetKg:e.targetKg, rpe:e.rpe, rest:e.rest}, sets: Array.from({length:e.sets}, newSet)}))};
+}
+// most recent logged sets of an exercise before a given session
+function lastFor(name, beforeId){
+  for (const s of sessions()){
+    if (s.id === beforeId) continue;
+    if (beforeId && docs[beforeId] && (s.date + s.day) > (docs[beforeId].date + docs[beforeId].day)) continue;
+    const ex = (s.exercises||[]).find(e => e.name === name);
+    if (ex){ const done = ex.sets.filter(x => x.done && x.kg !== ""); if (done.length) return {date:s.date, sets:done}; }
+  }
+  return null;
+}
+// Epley, counting reps left in the tank from RPE when it was logged
+const e1rm = (kg, reps, rpe) => { const rir = rpe >= 5 && rpe <= 10 ? 10 - rpe : 0; const r = reps + rir; return (kg > 0 && reps > 0 && r <= 30) ? kg * (1 + (r === 1 ? 0 : r/30)) : 0; };
+const round1 = n => Math.round(n*10)/10;
+
+/* ---------- ui state ---------- */
+const tw = blockWeekFor(TODAY);
+const state = {
+  tab: "today", week: tw.week, day: dayName(TODAY), openId: null,
+  session: null, sessionId: null, dirty: false, menu: null, confirm: null,
+  bwEdit: false, progressEx: "Barbell Bench Press", timer: null, logOpen: null
+};
+try { const t = localStorage.getItem("pbLog.tab"); if (t) state.tab = t; } catch {}
+
+function currentSession(){
+  if (state.openId && docs[state.openId]) { state.sessionId = state.openId; return docs[state.openId]; }
+  // a session already logged for this week and day in the current block shows up again on any later date
+  const t = blockWeekFor(TODAY);
+  const blockStart = addDays(settings() ? settings().cycleStart : mondayOf(TODAY), (t.block-1)*28);
+  const logged = sessions().find(x => x.week === state.week && x.day === state.day && x.date >= blockStart && x.date < addDays(blockStart, 28));
+  if (logged) { state.sessionId = logged.id; return docs[logged.id]; }
+  // today's session for this day keeps its original id; browsing a different week on the same day gets its own id
+  const base = `s-${TODAY}-${state.day}`;
+  const id = (!docs[base] || docs[base].week === state.week) ? base : `${base}-w${state.week}`;
+  state.sessionId = id;
+  if (docs[id]) return docs[id];
+  if (!state.session || state.session.__key !== id + state.week){
+    if (planDay(state.week, state.day).rest) { state.session = null; return null; }
+    state.session = buildSession(state.week, state.day, TODAY);
+    Object.defineProperty(state.session, "__key", {value: id + state.week, enumerable:false});
+  }
+  return state.session;
+}
+function persist(s){ state.dirty = true; save(state.sessionId, s); }
+
+/* ---------- render ---------- */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $ = id => document.getElementById(id);
+
+function renderHeader(){
+  const today = blockWeekFor(TODAY);
+  const s = state.openId && docs[state.openId];
+  const weekChips = [1,2,3,4].map(w => `<button class="chip ${state.week===w?"on":""} ${today.week===w?"today":""}" data-act="week" data-v="${w}">Wk ${w} <span class="sub">${esc(PLAN.weeks[w-1].label.split(" ")[0])}</span></button>`).join("");
+  const dayChips = DAYS.map(d => { const pd = planDay(state.week, d); return `<button class="chip ${state.day===d?"on":""} ${dayName(TODAY)===d?"today":""} ${pd.rest?"rest":""}" data-act="day" data-v="${d}">${SHORT[d]}</button>`; }).join("");
+  $("hdr").innerHTML = `
+    <div class="toprow"><h1>${state.tab==="today"?esc(PLAN_NAMES[planKey()]):"Powerbuilding"}</h1><span class="sync" id="sync">${esc(syncMsg)}</span></div>
+    ${state.tab === "today" ? (s ? `<div class="spread"><span class="small">Editing <b>${esc(fmtDate(s.date))}</b> · ${esc(s.day)}</span><button class="btn ghost" data-act="close-open">Back to today</button></div>` : `<div class="chips" role="group" aria-label="Week">${weekChips}</div><div class="chips" role="group" aria-label="Day">${dayChips}</div>`) :
+      `<div class="small muted">Block ${today.block} · Week ${today.week} of 4 · ${esc(fmtDate(TODAY))}</div>`}`;
+}
+
+function bwCard(){
+  const e = bwEntries(); const v = e[TODAY];
+  const prev = Object.keys(e).filter(d => d < TODAY).sort();
+  const last7 = Object.keys(e).filter(d => d > addDays(TODAY,-7) && d <= TODAY).map(d => e[d]);
+  const avg = last7.length ? last7.reduce((a,b)=>a+b,0)/last7.length : null;
+  if (v != null && !state.bwEdit){
+    const p = prev.length ? e[prev[prev.length-1]] : null;
+    const d = p != null ? round1(v - p) : null;
+    return `<div class="card"><div class="bw"><div><div class="eyebrow">Morning bodyweight</div>
+      <div class="bwbig num">${v}<small>kg</small></div>
+      <div class="small muted">${d!=null?`<span class="delta ${d>0?"up":d<0?"down":""}">${d>0?"+":""}${d} kg</span> vs last entry · `:""}${avg?`7-day avg ${round1(avg)} kg`:""}</div></div>
+      <button class="btn ghost" data-act="bw-edit">Edit</button></div></div>`;
+  }
+  const ph = prev.length ? e[prev[prev.length-1]] : "";
+  return `<div class="card"><div class="eyebrow">Morning bodyweight</div>
+    <form class="row" data-form="bw" style="flex-wrap:nowrap"><input class="field num" id="bw-in" inputmode="decimal" placeholder="${ph?`Last: ${ph}`:"kg"}" value="${v ?? ""}" aria-label="Bodyweight in kg" style="font-size:20px;font-weight:600">
+    <button class="btn primary" type="submit">Log weight</button></form>
+    <div class="small muted">Weigh in before you start. It feeds the chart in Progress.</div></div>`;
+}
+
+function exCard(ex, i, s){
+  const p = ex.plan || {};
+  const last = lastFor(ex.name, state.sessionId);
+  const kgPh = p.targetKg != null ? p.targetKg : (last ? last.sets[0].kg : "");
+  const repPh = firstNum(p.reps) || (last ? last.sets[0].reps : "");
+  const rpePh = firstNum(p.rpe);
+  const target = p.sets ? `<b>${p.sets} × ${esc(p.reps)}</b><span class="sep">|</span>${esc(p.weight)}<span class="sep">|</span>RPE ${esc(p.rpe)}<span class="sep">|</span>rest ${esc(p.rest)}` : `<span class="muted">Added during session</span>`;
+  const std = stdFor(ex.name), L = ladderOf(std), bw = bwOn(s.date), lift = true;
+  const rows = ex.sets.map((st, j) => {
+    const sc = st.done ? setScore(std, st, bw) : null, tier = sc ? L[rankAt(L, sc.x)] : null;
+    return `
+    <div class="setrow ${st.done?"done":""}" data-i="${i}" data-j="${j}">
+      <span class="setno">${j+1}</span>
+      <input id="kg-${i}-${j}" inputmode="decimal" data-f="kg" value="${esc(st.kg)}" placeholder="${esc(kgPh)}" aria-label="Set ${j+1} weight kg">
+      <input id="reps-${i}-${j}" inputmode="numeric" data-f="reps" value="${esc(st.reps)}" placeholder="${esc(repPh)}" aria-label="Set ${j+1} reps">
+      <input id="rpe-${i}-${j}" inputmode="decimal" data-f="rpe" value="${esc(st.rpe)}" placeholder="${esc(rpePh)}" aria-label="Set ${j+1} RPE">
+      ${medal(tier, tier && `${rankName(tier)}: ${sc.label}`, ex.name)}
+      <button class="check" data-act="done" data-i="${i}" data-j="${j}" aria-label="Mark set ${j+1} done">✓</button>
+    </div>`; }).join("");
+  const open = state.menu === i;
+  const conf = state.confirm === "rm-" + i;
+  return `<section class="ex ${ex.main?"main":""}">
+    <div class="exhead">
+      <div class="exname"><div>${ex.main?`<span class="badge">Main lift</span>`:""}<h3>${esc(ex.name)}</h3></div>
+      <button class="dots" data-act="menu" data-i="${i}" aria-label="Edit exercise" aria-expanded="${open}">⋯</button></div>
+      <div class="target">${target}</div>
+      ${last ? `<div class="last">Last (${esc(fmtDate(last.date))}): ${last.sets.map(x => `${esc(x.kg)}×${esc(x.reps)}${x.rpe?` @${esc(x.rpe)}`:""}`).join(", ")}</div>` : ""}
+    </div>
+    ${open ? `<div class="edit">
+      <label class="small muted" for="rn-${i}">Swap or rename</label>
+      <form class="row" data-form="rename" data-i="${i}" style="flex-wrap:nowrap"><input class="field" id="rn-${i}" value="${esc(ex.name)}"><button class="btn" type="submit">Save</button></form>
+      <div class="row"><button class="btn" data-act="up" data-i="${i}" ${i===0?"disabled":""}>Move up</button><button class="btn" data-act="down" data-i="${i}" ${i===s.exercises.length-1?"disabled":""}>Move down</button>
+      <button class="btn danger" data-act="rm" data-i="${i}">${conf?"Tap again to remove":"Remove"}</button></div></div>` : ""}
+    <div class="sets ${lift?"ranked":""}"><div class="setrow head"><span>Set</span><span>kg</span><span>Reps</span><span>RPE</span>${lift?"<span>Rank</span>":""}<span></span></div>${rows}</div>
+    ${std.basis !== "reps" && !bw ? `<div class="small muted" style="padding:0 14px 10px">Log your bodyweight to earn medals on this lift.</div>` : ""}
+    <div class="setbtns">${ex.sets.length>1?`<button class="btn ghost" data-act="rmset" data-i="${i}">− Set</button>`:""}<button class="btn ghost" data-act="addset" data-i="${i}">+ Set</button></div>
+  </section>`;
+}
+
+function renderToday(){
+  const s = currentSession();
+  const pd = planDay(state.week, state.day);
+  const wk = PLAN.weeks[(s ? s.week : state.week) - 1];
+  let html = bwCard();
+  if (!s){
+    html += `<div class="card restcard"><div class="eyebrow">Week ${state.week} · ${esc(wk.label)} · ${esc(state.day)}</div><h2>Rest day</h2>
+      <p class="note">Recover, eat, sleep. Log your weight above and come back tomorrow.</p>
+      <p class="small muted">Missed a session? Tap another day above to train it today.</p></div>`;
+    return html;
+  }
+  const done = s.exercises.reduce((a,e) => a + e.sets.filter(x=>x.done).length, 0);
+  const total = s.exercises.reduce((a,e) => a + e.sets.length, 0);
+  html += `<div class="dayhead"><div class="eyebrow">Week ${s.week} · ${esc(wk.label)} · ${esc(s.day)}</div><h2>${esc(s.title)}</h2>
+    <div class="meta num">${s.date !== TODAY ? `Logged ${esc(fmtDate(s.date))} · ` : ""}${done} of ${total} sets done${s.week===4?` · ${esc(PLAN.weeks[3].label)}`:""}</div></div>`;
+  if (s.finished){
+    const vol = s.exercises.reduce((a,e) => a + e.sets.filter(x=>x.done).reduce((b,x)=> b + (+x.kg||0)*(+x.reps||0), 0), 0);
+    html += `<div class="done-banner"><h3>Workout logged</h3><div class="small">${done} sets · ${Math.round(vol).toLocaleString()} kg total volume. You can still edit below.</div></div>`;
+  }
+  html += s.exercises.map((e,i) => exCard(e,i,s)).join("");
+  html += `<form class="addex" data-form="addex"><div class="eyebrow">Add an exercise</div>
+    <div class="grid3"><input class="field" id="ax-name" placeholder="Exercise name" aria-label="Exercise name" required>
+    <input class="field" id="ax-sets" inputmode="numeric" placeholder="Sets" value="3" aria-label="Sets">
+    <input class="field" id="ax-reps" placeholder="Reps" value="10" aria-label="Reps"></div>
+    <button class="btn" type="submit">Add exercise</button></form>`;
+  html += `<div class="card"><label class="eyebrow" for="notes">Session notes</label>
+    <textarea class="field" id="notes" data-f="notes" placeholder="How did it feel? Anything to change next time?">${esc(s.notes)}</textarea></div>`;
+  html += s.finished ? "" : `<button class="btn primary block" data-act="finish" style="min-height:52px;font-size:18px">Finish workout</button>`;
+  return html;
+}
+
+/* charts */
+function lineChart(pts, unit, refY){
+  if (pts.length < 2) return `<p class="empty">${pts.length ? "One entry so far. The chart appears after the second." : "Nothing logged yet."}</p>`;
+  const W = 340, H = 170, L = 36, R = 10, T = 12, B = 22;
+  const xs = pts.map(p => parseISO(p.x).getTime()), ys = pts.map(p => p.y).concat(refY ? [refY] : []);
+  let y0 = Math.min(...ys), y1 = Math.max(...ys); const pad = Math.max((y1-y0)*0.15, 0.5); y0 -= pad; y1 += pad;
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const X = t => L + (x1===x0 ? 0.5 : (t-x0)/(x1-x0)) * (W-L-R), Y = v => T + (1-(v-y0)/(y1-y0)) * (H-T-B);
+  const ticks = [0,1,2].map(k => y0 + (y1-y0)*(k+0.5)/3);
+  const line = pts.map((p,i) => `${i?"L":"M"}${X(xs[i]).toFixed(1)},${Y(p.y).toFixed(1)}`).join("");
+  const area = `${line}L${X(xs[xs.length-1]).toFixed(1)},${H-B}L${X(xs[0]).toFixed(1)},${H-B}Z`;
+  const lp = pts[pts.length-1];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Chart of ${unit}">
+    ${ticks.map(v => `<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end">${round1(v)}</text>`).join("")}
+    ${refY ? `<line x1="${L}" x2="${W-R}" y1="${Y(refY)}" y2="${Y(refY)}" stroke="var(--plate)" stroke-dasharray="4 4" stroke-width="1.2"/><text x="${W-R}" y="${Y(refY)-5}" text-anchor="end" style="fill:var(--plate)">plan 1RM ${refY}</text>` : ""}
+    <path d="${area}" fill="var(--accent)" opacity=".12"/>
+    <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round"/>
+    <circle cx="${X(xs[xs.length-1])}" cy="${Y(lp.y)}" r="4.5" fill="var(--accent)"/>
+    <text x="${L}" y="${H-6}">${esc(fmtDate(pts[0].x))}</text><text x="${W-R}" y="${H-6}" text-anchor="end">${esc(fmtDate(lp.x))}</text>
+  </svg>`;
+}
+function exerciseHistory(name){
+  const out = [];
+  for (const s of sessions().slice().reverse()){
+    const exs = (s.exercises||[]).filter(e => e.name === name || e.name === name + " (top single)"); if (!exs.length) continue;
+    const done = exs.flatMap(e => e.sets).filter(x => x.done && +x.kg > 0 && +x.reps > 0);
+    if (!done.length) continue;
+    const best = done.reduce((a,x) => e1rm(+x.kg,+x.reps,+x.rpe) > e1rm(+a.kg,+a.reps,+a.rpe) ? x : a, done[0]);
+    const top = done.reduce((a,x) => +x.kg > +a.kg ? x : a, done[0]);
+    out.push({date:s.date, e1:round1(e1rm(+best.kg,+best.reps,+best.rpe)), top, vol: done.reduce((a,x)=>a + x.kg*x.reps, 0), sets: done.length});
+  }
+  return out;
+}
+function renderProgress(){
+  const e = bwEntries(); const days = Object.keys(e).sort();
+  const pts = days.slice(-90).map(d => ({x:d, y:e[d]}));
+  const latest = days.length ? e[days[days.length-1]] : null;
+  const wkAgo = days.filter(d => d <= addDays(TODAY,-7)); const prev = wkAgo.length ? e[wkAgo[wkAgo.length-1]] : null;
+  const first = days.length ? e[days[0]] : null;
+  const fmtD = v => v==null ? "–" : (v>0?"+":"") + round1(v);
+  let html = `<div class="card"><div class="spread"><h2 style="font-size:24px">Bodyweight</h2><span class="small muted">${days.length} entries</span></div>
+    <div class="stats"><div class="stat"><b class="num">${latest ?? "–"}</b><span>latest kg</span></div>
+    <div class="stat"><b class="num">${latest!=null&&prev!=null?fmtD(latest-prev):"–"}</b><span>vs a week ago</span></div>
+    <div class="stat"><b class="num">${latest!=null&&first!=null&&days.length>1?fmtD(latest-first):"–"}</b><span>since start</span></div></div>
+    ${lineChart(pts, "bodyweight in kg")}</div>`;
+  const lifts = [["Barbell Bench Press","bench"],["Back Squat","squat"],["Conventional Deadlift","deadlift"]];
+  const bwNow = bwOn(TODAY);
+  const bestE1 = l => { const h = exerciseHistory({"bench":"Barbell Bench Press","squat":"Back Squat","deadlift":"Conventional Deadlift"}[l]); return h.length ? Math.max(...h.map(x=>x.e1)) : 0; };
+  html += `<div class="card"><h2 style="font-size:24px">Lift ranks</h2>
+    ${bwNow ? `<div class="list">${LIFTS.map(l => { const e1 = bestE1(l), tr = tierFor(l, e1, bwNow);
+      if (!tr) return `<div class="li"><div class="rankname"><span class="medal" style="background:var(--sunk);box-shadow:none;color:var(--muted)">–</span>${l[0].toUpperCase()+l.slice(1)}</div><span class="small muted">No sets logged yet</span></div>`;
+      const L = LADDER[l], i = rankIndex(l, e1, bwNow), nx = L[i+1];
+      return `<div class="li"><div class="rankname">${medal(tr, null, {"bench":"Barbell Bench Press","squat":"Back Squat","deadlift":"Conventional Deadlift"}[l])}<span>${l[0].toUpperCase()+l.slice(1)}<br><span class="small muted">${rankName(tr)} · est. ${round1(e1)} kg</span></span></div><span class="small muted num" style="text-align:right">${nx ? `${round1(Math.max(nx.min*bwNow - e1, 0.1))} kg to<br>${rankName(nx)}` : "Top rank"}</span></div>`; }).join("")}</div>
+    <div class="tscroll"><table class="t num ranks"><tr><th>Rank</th><th>Bench</th><th>Squat</th><th>Deadlift</th></tr>
+    ${TIERS.slice().reverse().map(tr => `<tr><td><span class="rankname">${medal({...tr, div:""})}${tr.n}</span></td>${LIFTS.map(l => { const r = LADDER[l].find(x => x.k === tr.k); return `<td>${tr.k === "gold" ? `&lt; ${r25(STD[l][0]*bwNow)}` : `${r25(r.min*bwNow)}+`}</td>`; }).join("")}</tr>`).join("")}</table></div>
+    <p class="small muted">Estimated 1RM in kg to enter each rank at your bodyweight of ${bwNow} kg. Every rank below Legend has three divisions, III then II then I, each a third of the way to the next rank. Each set is ranked by the max it shows (weight, reps and RPE together), so a hard triple can earn the same medal as a heavy single. Legend means bench ${STD.bench[6]}×, squat ${STD.squat[6]}× and deadlift ${STD.deadlift[6]}× bodyweight.</p>` : `<p class="empty">Log your bodyweight on the Today tabto unlock ranks.</p>`}</div>`;
+  html += `<div class="card"><h2 style="font-size:24px">Big three</h2><div class="stats">${lifts.map(([n,k]) => {
+    const h = exerciseHistory(n); const best = h.length ? Math.max(...h.map(x=>x.e1)) : null;
+    return `<div class="stat"><b class="num">${best ?? "–"}</b><span>${k} est. 1RM<br>your max: ${maxes()[k]}</span></div>`; }).join("")}</div>
+    <div class="small muted">Estimated 1RM uses your best set of the day (Epley formula, sets of 12 reps or fewer).</div></div>`;
+  const names = [...new Set([...PLAN.weeks[0] ? Object.values(PLAN.weeks[0].days).flatMap(d => d.exercises.map(x=>x.name)) : [], ...sessions().flatMap(s => (s.exercises||[]).map(x=>x.name))])];
+  if (!names.includes(state.progressEx)) state.progressEx = names[0];
+  const h = exerciseHistory(state.progressEx);
+  const ref = {"Barbell Bench Press":maxes().bench,"Back Squat":maxes().squat,"Conventional Deadlift":maxes().deadlift}[state.progressEx];
+  html += `<div class="card"><h2 style="font-size:24px">Exercise progress</h2>
+    <select class="field" id="prog-ex" aria-label="Exercise">${names.map(n => `<option ${n===state.progressEx?"selected":""}>${esc(n)}</option>`).join("")}</select>
+    <div class="eyebrow">Estimated 1RM per session</div>
+    ${lineChart(h.map(x => ({x:x.date, y:x.e1})), "estimated 1RM", ref)}
+    ${h.length ? `<div class="tscroll"><table class="t num"><tr><th>Date</th><th>Top set</th><th>Sets</th><th>Volume</th><th>e1RM</th></tr>
+    ${h.slice().reverse().slice(0,12).map(x => `<tr><td>${esc(fmtDate(x.date))}</td><td>${esc(x.top.kg)}×${esc(x.top.reps)}${x.top.rpe?` @${esc(x.top.rpe)}`:""}</td><td>${x.sets}</td><td>${Math.round(x.vol)}</td><td>${x.e1}</td></tr>`).join("")}</table></div>` : ""}
+  </div>`;
+  return html;
+}
+function renderLog(){
+  const list = sessions();
+  if (!list.length) return `<div class="card"><h2 style="font-size:24px">Workout log</h2><p class="empty">No sessions yet. Tick off your first set on the Today tab and it shows up here.</p></div>`;
+  return `<div class="card"><h2 style="font-size:24px">Workout log</h2><div class="list">${list.map(s => {
+    const done = s.exercises.reduce((a,e) => a + e.sets.filter(x=>x.done).length, 0);
+    const total = s.exercises.reduce((a,e) => a + e.sets.length, 0);
+    const vol = s.exercises.reduce((a,e) => a + e.sets.filter(x=>x.done).reduce((b,x)=> b + (+x.kg||0)*(+x.reps||0), 0), 0);
+    const open = state.logOpen === s.id, conf = state.confirm === "del-" + s.id;
+    return `<div><div class="li"><div class="l"><div class="eyebrow">${esc(fmtDate(s.date))} · Week ${s.week}</div><h3>${esc(s.title)}</h3>
+      <div class="small muted num">${done}/${total} sets · ${Math.round(vol).toLocaleString()} kg${s.finished?"":" · in progress"}</div></div>
+      <button class="btn ghost" data-act="log-toggle" data-id="${esc(s.id)}">${open?"Hide":"View"}</button></div>
+      ${open ? `<div class="tscroll"><table class="t num">${s.exercises.map(e => `<tr><td>${esc(e.name)}</td><td>${e.sets.filter(x=>x.done).map(x => `${esc(x.kg)}×${esc(x.reps)}${x.rpe?` @${esc(x.rpe)}`:""}`).join(", ") || "<span class='muted'>skipped</span>"}</td></tr>`).join("")}</table></div>
+      ${s.notes ? `<p class="note small">${esc(s.notes)}</p>` : ""}
+      <div class="row"><button class="btn" data-act="log-edit" data-id="${esc(s.id)}">Edit session</button><button class="btn danger" data-act="log-del" data-id="${esc(s.id)}">${conf?"Tap again to delete":"Delete"}</button></div>` : ""}</div>`;
+  }).join("")}</div></div>`;
+}
+function renderPlan(){
+  const t = blockWeekFor(TODAY);
+  const wk = PLAN.weeks[state.week-1];
+  const k = planKey();
+  const chooser = `<div class="card"><h2 style="font-size:24px">Your plan</h2>
+    <div class="row">${Object.keys(PLANS).map(p => `<button class="chip ${k===p?"on":""}" data-act="setplan" data-v="${p}">${PLAN_NAMES[p]}</button>`).join("")}</div>
+    <p class="small muted">${k==="aggressive" ? "Heavier main lifts, a top single each heavy day, bench three times a week, and a taper in week 4 so you test maxes in week 5." : "Your original plan from the PDF, with a deload in week 4."} Switching never changes workouts you've already logged.</p>
+    ${PLAN.goal ? `<div class="stats">${["bench","squat","deadlift"].map(l => `<div class="stat"><b class="num">${PLAN.goal[l].split("-").map(v => +v - PLAN.oneRM[l] + maxes()[l]).join("–")}</b><span>${l} goal, kg</span></div>`).join("")}</div><div class="small muted">Stretch goals for week 5, if the block goes well.</div>` : ""}</div>`;
+  const m = maxes();
+  const sugg = {"bench":"Barbell Bench Press","squat":"Back Squat","deadlift":"Conventional Deadlift"};
+  const best = Object.fromEntries(LIFTS.map(l => { const h = exerciseHistory(sugg[l]); return [l, h.length ? r25(Math.max(...h.map(x=>x.e1))) : null]; }));
+  const higher = LIFTS.filter(l => best[l] && best[l] > m[l]);
+  const maxCard = `<div class="card"><h2 style="font-size:24px">Your maxes</h2>
+    <p class="small muted">Every barbell weight in the plan is worked out from these. If the sets feel too easy, your real max is higher than the number here, so raise it and the weights for workouts you haven't done yet go up to match.</p>
+    ${higher.length ? `<div class="stat"><span>From your logged sets (counting reps left from RPE)</span><div class="row" style="margin-top:4px">${higher.map(l => `<b class="num" style="font-size:18px">${l} ≈ ${best[l]}</b>`).join(" ")}<button class="btn primary" data-act="use-logged">Use these</button></div></div>` : ""}
+    <form class="grid3" data-form="maxes" style="grid-template-columns:repeat(3,1fr)">${LIFTS.map(l => `<label class="small muted" style="display:grid;gap:4px">${l[0].toUpperCase()+l.slice(1)} kg<input class="field num" id="max-${l}" inputmode="decimal" value="${m[l]}"></label>`).join("")}
+    <button class="btn" type="submit" style="grid-column:1/-1">Update weights</button></form>
+    <p class="small muted">The original numbers were bench ${PLAN.oneRM.bench}, squat ${PLAN.oneRM.squat}, deadlift ${PLAN.oneRM.deadlift}. Workouts you've already logged stay as they are.</p></div>`;
+  const nLogged = sessions().length, nBw = Object.keys(bwEntries()).length;
+  const backupCard = `<div class="card"><h2 style="font-size:24px">Backup and restore</h2>
+    <p class="small muted">${IS_APP ? "This app keeps your logs on this phone only. Save a backup now and then so nothing is lost if the phone is reset." : "Use this to move your logs into the home-screen app, or to keep a copy."} You have ${nLogged} workout${nLogged === 1 ? "" : "s"} and ${nBw} weigh-in${nBw === 1 ? "" : "s"} saved.</p>
+    <div class="row"><button class="btn primary" data-act="backup-copy">Copy backup</button><button class="btn" data-act="backup-save">Save backup file</button></div>
+    <form data-form="restore" style="display:grid;gap:8px">
+      <label class="small muted" for="imp-text">Restore: paste a backup, or pick a backup file</label>
+      <textarea class="field" id="imp-text" placeholder="Paste backup here" style="min-height:56px;font-size:12px"></textarea>
+      <input class="field" id="imp-file" type="file" accept=".json,application/json,text/plain">
+      <button class="btn" type="submit">Restore backup</button>
+      <p class="small muted" id="imp-msg">Restoring adds to what's here and never deletes anything. If the same workout is in both, the one with more sets ticked is kept.</p>
+    </form></div>`;
+  return chooser + maxCard + backupCard + `<div class="card"><h2 style="font-size:24px">Where you are</h2>
+    <p class="note">Today counts as <b>week ${t.week}</b> of the 4-week block (block ${t.block}). The block started on ${esc(fmtDate(settings()?.cycleStart || mondayOf(TODAY)))}. If that's off, set this week:</p>
+    <div class="row">${[1,2,3,4].map(w => `<button class="chip ${t.week===w?"on":""}" data-act="setweek" data-v="${w}">Week ${w}</button>`).join("")}</div>
+    <p class="small muted">After week 4 it rolls back to week 1. Test new maxes first if you want to update the numbers.</p></div>
+  <div class="card"><h2 style="font-size:24px">Main lift progression</h2><div class="tscroll"><table class="t num"><tr><th>Lift</th>${PLAN.weeks.map(w=>`<th>Wk ${w.week}</th>`).join("")}</tr>
+    ${DAYS.flatMap(d => PLAN.weeks[0].days[d].exercises.filter(e => e.main).map(e => e.name)
+      .map(n => `<tr><td>${esc(n.replace(" (2 s pause)",""))} <span class="muted">${SHORT[d]}</span></td>${PLAN.weeks.map(w => { const e0 = w.days[d].exercises.find(x => x.name === n), e = e0 && scaleEx(e0); return `<td>${e ? `${e.sets}×${esc(e.reps)} @ ${e.targetKg}` : "–"}</td>`; }).join("")}</tr>`)).join("")}</table></div>
+    <div class="small muted">Worked out from your maxes: bench ${maxes().bench}, squat ${maxes().squat}, deadlift ${maxes().deadlift} kg.</div></div>
+  <div class="card"><h2 style="font-size:24px">How to run it</h2><ul class="note" style="padding-left:18px;margin:0">${PLAN.notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul></div>`;
+}
+
+/* muscle map: hard sets this calendar week, primary muscle 1 set, secondary 0.5 */
+const MUSCLES = {chest:"Chest", frontDelts:"Front delts", sideDelts:"Side delts", rearDelts:"Rear delts", biceps:"Biceps", triceps:"Triceps", forearms:"Forearms", abs:"Abs", upperBack:"Upper back", lats:"Lats", lowerBack:"Lower back", glutes:"Glutes", quads:"Quads", hamstrings:"Hamstrings", calves:"Calves"};
+const MUSCLE_RULES = [
+  [/close-grip/i, {triceps:1, chest:.5, frontDelts:.5}],
+  [/bench|chest press|incline/i, {chest:1, triceps:.5, frontDelts:.5}],
+  [/dip/i, {chest:1, triceps:1, frontDelts:.5}],
+  [/pec deck|fly|flye/i, {chest:1, frontDelts:.5}],
+  [/ez curl \+ rope|curl \+ (rope|pushdown)/i, {biceps:1, triceps:1, forearms:.5}],
+  [/pushdown|skull|triceps|tricep/i, {triceps:1}],
+  [/lateral raise/i, {sideDelts:1}],
+  [/shoulder press|overhead press|ohp|military/i, {frontDelts:1, sideDelts:.5, triceps:.5}],
+  [/face pull|rear delt|reverse fly/i, {rearDelts:1, upperBack:.5}],
+  [/pull-?up|chin-?up|pulldown/i, {lats:1, biceps:.5, upperBack:.5}],
+  [/row/i, {upperBack:1, lats:1, rearDelts:.5, biceps:.5}],
+  [/leg curl|hamstring curl/i, {hamstrings:1}],
+  [/curl/i, {biceps:1, forearms:.5}],
+  [/romanian|rdl|stiff/i, {hamstrings:1, glutes:1, lowerBack:.5}],
+  [/deadlift/i, {hamstrings:1, glutes:1, lowerBack:1, quads:.5, upperBack:.5}],
+  [/back extension|hyperextension/i, {lowerBack:1, glutes:.5, hamstrings:.5}],
+  [/hack squat|leg press/i, {quads:1, glutes:.5}],
+  [/squat|lunge|split/i, {quads:1, glutes:1, lowerBack:.5}],
+  [/leg extension/i, {quads:1}],
+  [/calf/i, {calves:1}],
+  [/leg raise|crunch|plank|ab /i, {abs:1}],
+  [/shrug/i, {upperBack:1}]
+];
+const musclesOf = name => { const r = MUSCLE_RULES.find(([re]) => re.test(name)); return r ? r[1] : {}; };
+function weekMuscles(){
+  const start = mondayOf(TODAY), end = addDays(start, 7), out = {}, by = {};
+  for (const k in MUSCLES){ out[k] = 0; by[k] = {}; }
+  for (const s of sessions()){
+    if (s.date < start || s.date >= end) continue;
+    for (const ex of s.exercises || []){
+      const n = ex.sets.filter(x => x.done).length; if (!n) continue;
+      for (const [m, w] of Object.entries(musclesOf(ex.name))){ out[m] += n*w; by[m][baseName(ex.name)] = (by[m][baseName(ex.name)] || 0) + n*w; }
+    }
+  }
+  return {sets: out, by, start};
+}
+const heat = v => `hsl(${Math.round(Math.min(v, 10)/10*130)} ${v >= 10 ? 55 : 75}% ${v >= 10 ? 42 : 50}%)`;
+// front and back figures (160×345 box); paths generated by gym/body.py
+const SIL_D = "M80.0 38.0C77.7 38.0 74.3 38.5 73.0 40.0C71.7 41.5 73.8 45.0 72.0 47.0C70.2 49.0 65.7 50.7 62.0 52.0C58.3 53.3 53.5 53.7 50.0 55.0C46.5 56.3 43.2 57.5 41.0 60.0C38.8 62.5 38.0 66.0 37.0 70.0C36.0 74.0 35.7 79.0 35.0 84.0C34.3 89.0 33.7 94.3 33.0 100.0C32.3 105.7 31.8 111.7 31.0 118.0C30.2 124.3 28.7 131.3 28.0 138.0C27.3 144.7 27.5 152.7 27.0 158.0C26.5 163.3 25.2 166.3 25.0 170.0C24.8 173.7 25.0 178.0 26.0 180.0C27.0 182.0 29.7 183.3 31.0 182.0C32.3 180.7 33.3 175.7 34.0 172.0C34.7 168.3 34.3 165.3 35.0 160.0C35.7 154.7 36.8 146.5 38.0 140.0C39.2 133.5 40.8 127.3 42.0 121.0C43.2 114.7 44.0 107.5 45.0 102.0C46.0 96.5 47.2 88.3 48.0 88.0C48.8 87.7 49.2 93.3 50.0 100.0C50.8 106.7 53.0 119.7 53.0 128.0C53.0 136.3 50.8 142.0 50.0 150.0C49.2 158.0 48.2 165.7 48.0 176.0C47.8 186.3 48.3 201.3 49.0 212.0C49.7 222.7 51.8 231.7 52.0 240.0C52.2 248.3 50.0 253.3 50.0 262.0C50.0 270.7 51.0 282.3 52.0 292.0C53.0 301.7 56.0 313.3 56.0 320.0C56.0 326.7 52.0 329.0 52.0 332.0C52.0 335.0 53.3 337.2 56.0 338.0C58.7 338.8 66.2 340.0 68.0 337.0C69.8 334.0 67.0 327.5 67.0 320.0C67.0 312.5 67.8 301.7 68.0 292.0C68.2 282.3 67.7 270.7 68.0 262.0C68.3 253.3 68.7 250.3 70.0 240.0C71.3 229.7 74.3 210.0 76.0 200.0C77.7 190.0 78.7 180.0 80.0 180.0C81.3 180.0 82.3 190.0 84.0 200.0C85.7 210.0 88.7 229.7 90.0 240.0C91.3 250.3 91.7 253.3 92.0 262.0C92.3 270.7 91.8 282.3 92.0 292.0C92.2 301.7 93.0 312.5 93.0 320.0C93.0 327.5 90.2 334.0 92.0 337.0C93.8 340.0 101.3 338.8 104.0 338.0C106.7 337.2 108.0 335.0 108.0 332.0C108.0 329.0 104.0 326.7 104.0 320.0C104.0 313.3 107.0 301.7 108.0 292.0C109.0 282.3 110.0 270.7 110.0 262.0C110.0 253.3 107.8 248.3 108.0 240.0C108.2 231.7 110.3 222.7 111.0 212.0C111.7 201.3 112.2 186.3 112.0 176.0C111.8 165.7 110.8 158.0 110.0 150.0C109.2 142.0 107.0 136.3 107.0 128.0C107.0 119.7 109.2 106.7 110.0 100.0C110.8 93.3 111.2 87.7 112.0 88.0C112.8 88.3 114.0 96.5 115.0 102.0C116.0 107.5 116.8 114.7 118.0 121.0C119.2 127.3 120.8 133.5 122.0 140.0C123.2 146.5 124.3 154.7 125.0 160.0C125.7 165.3 125.3 168.3 126.0 172.0C126.7 175.7 127.7 180.7 129.0 182.0C130.3 183.3 133.0 182.0 134.0 180.0C135.0 178.0 135.2 173.7 135.0 170.0C134.8 166.3 133.5 163.3 133.0 158.0C132.5 152.7 132.7 144.7 132.0 138.0C131.3 131.3 129.8 124.3 129.0 118.0C128.2 111.7 127.7 105.7 127.0 100.0C126.3 94.3 125.7 89.0 125.0 84.0C124.3 79.0 124.0 74.0 123.0 70.0C122.0 66.0 121.2 62.5 119.0 60.0C116.8 57.5 113.5 56.3 110.0 55.0C106.5 53.7 101.7 53.3 98.0 52.0C94.3 50.7 89.8 49.0 88.0 47.0C86.2 45.0 88.3 41.5 87.0 40.0C85.7 38.5 82.3 38.0 80.0 38.0ZM80 8C88 8 93 15 93 24C93 33 88 40 80 40C72 40 67 33 67 24C67 15 72 8 80 8Z";
+const FRONT = [["upperBack", "M73.0 45.0C71.3 44.8 67.0 48.5 64.0 50.0C61.0 51.5 54.7 53.2 55.0 54.0C55.3 54.8 62.8 55.5 66.0 55.0C69.2 54.5 72.8 52.7 74.0 51.0C75.2 49.3 74.7 45.2 73.0 45.0ZM87.0 45.0C88.7 44.8 93.0 48.5 96.0 50.0C99.0 51.5 105.3 53.2 105.0 54.0C104.7 54.8 97.2 55.5 94.0 55.0C90.8 54.5 87.2 52.7 86.0 51.0C84.8 49.3 85.3 45.2 87.0 45.0Z"], ["frontDelts", "M55.0 57.0C53.0 56.5 48.2 58.2 46.0 60.0C43.8 61.8 42.5 64.7 42.0 68.0C41.5 71.3 42.0 77.5 43.0 80.0C44.0 82.5 46.5 84.3 48.0 83.0C49.5 81.7 50.3 75.3 52.0 72.0C53.7 68.7 57.5 65.5 58.0 63.0C58.5 60.5 57.0 57.5 55.0 57.0ZM105.0 57.0C107.0 56.5 111.8 58.2 114.0 60.0C116.2 61.8 117.5 64.7 118.0 68.0C118.5 71.3 118.0 77.5 117.0 80.0C116.0 82.5 113.5 84.3 112.0 83.0C110.5 81.7 109.7 75.3 108.0 72.0C106.3 68.7 102.5 65.5 102.0 63.0C101.5 60.5 103.0 57.5 105.0 57.0Z"], ["sideDelts", "M44.0 58.0C43.3 58.0 40.3 61.3 39.0 64.0C37.7 66.7 36.2 70.7 36.0 74.0C35.8 77.3 37.0 84.0 38.0 84.0C39.0 84.0 41.2 77.3 42.0 74.0C42.8 70.7 42.7 66.7 43.0 64.0C43.3 61.3 44.7 58.0 44.0 58.0ZM116.0 58.0C116.7 58.0 119.7 61.3 121.0 64.0C122.3 66.7 123.8 70.7 124.0 74.0C124.2 77.3 123.0 84.0 122.0 84.0C121.0 84.0 118.8 77.3 118.0 74.0C117.2 70.7 117.3 66.7 117.0 64.0C116.7 61.3 115.3 58.0 116.0 58.0Z"], ["chest", "M78.0 62.0C76.0 57.3 69.5 58.7 66.0 59.0C62.5 59.3 59.2 61.5 57.0 64.0C54.8 66.5 53.3 70.3 53.0 74.0C52.7 77.7 53.3 83.0 55.0 86.0C56.7 89.0 60.0 91.0 63.0 92.0C66.0 93.0 70.5 92.8 73.0 92.0C75.5 91.2 77.2 92.0 78.0 87.0C78.8 82.0 80.0 66.7 78.0 62.0ZM82.0 62.0C84.0 57.3 90.5 58.7 94.0 59.0C97.5 59.3 100.8 61.5 103.0 64.0C105.2 66.5 106.7 70.3 107.0 74.0C107.3 77.7 106.7 83.0 105.0 86.0C103.3 89.0 100.0 91.0 97.0 92.0C94.0 93.0 89.5 92.8 87.0 92.0C84.5 91.2 82.8 92.0 82.0 87.0C81.2 82.0 80.0 66.7 82.0 62.0Z"], ["biceps", "M45.0 87.0C43.8 87.7 42.0 91.8 41.0 95.0C40.0 98.2 39.0 102.3 39.0 106.0C39.0 109.7 40.0 115.5 41.0 117.0C42.0 118.5 44.0 117.3 45.0 115.0C46.0 112.7 46.5 107.0 47.0 103.0C47.5 99.0 48.3 93.7 48.0 91.0C47.7 88.3 46.2 86.3 45.0 87.0ZM115.0 87.0C116.2 87.7 118.0 91.8 119.0 95.0C120.0 98.2 121.0 102.3 121.0 106.0C121.0 109.7 120.0 115.5 119.0 117.0C118.0 118.5 116.0 117.3 115.0 115.0C114.0 112.7 113.5 107.0 113.0 103.0C112.5 99.0 111.7 93.7 112.0 91.0C112.3 88.3 113.8 86.3 115.0 87.0Z"], ["forearms", "M40.0 123.0C38.7 123.3 36.3 128.8 35.0 133.0C33.7 137.2 32.7 143.5 32.0 148.0C31.3 152.5 30.5 157.8 31.0 160.0C31.5 162.2 33.7 163.3 35.0 161.0C36.3 158.7 37.7 151.0 39.0 146.0C40.3 141.0 42.8 134.8 43.0 131.0C43.2 127.2 41.3 122.7 40.0 123.0ZM120.0 123.0C121.3 123.3 123.7 128.8 125.0 133.0C126.3 137.2 127.3 143.5 128.0 148.0C128.7 152.5 129.5 157.8 129.0 160.0C128.5 162.2 126.3 163.3 125.0 161.0C123.7 158.7 122.3 151.0 121.0 146.0C119.7 141.0 117.2 134.8 117.0 131.0C116.8 127.2 118.7 122.7 120.0 123.0Z"], ["abs", "M78.0 96.0C76.8 86.3 72.5 93.7 71.0 96.0C69.5 98.3 69.3 104.3 69.0 110.0C68.7 115.7 68.7 124.0 69.0 130.0C69.3 136.0 69.8 142.0 71.0 146.0C72.2 150.0 74.8 152.7 76.0 154.0C77.2 155.3 77.7 163.7 78.0 154.0C78.3 144.3 79.2 105.7 78.0 96.0ZM82.0 96.0C83.2 86.3 87.5 93.7 89.0 96.0C90.5 98.3 90.7 104.3 91.0 110.0C91.3 115.7 91.3 124.0 91.0 130.0C90.7 136.0 90.2 142.0 89.0 146.0C87.8 150.0 85.2 152.7 84.0 154.0C82.8 155.3 82.3 163.7 82.0 154.0C81.7 144.3 80.8 105.7 82.0 96.0ZM67.0 98.0C65.7 95.0 60.8 97.0 59.0 100.0C57.2 103.0 56.3 110.5 56.0 116.0C55.7 121.5 56.0 128.0 57.0 133.0C58.0 138.0 60.3 144.7 62.0 146.0C63.7 147.3 66.2 145.7 67.0 141.0C67.8 136.3 67.0 125.2 67.0 118.0C67.0 110.8 68.3 101.0 67.0 98.0ZM93.0 98.0C94.3 95.0 99.2 97.0 101.0 100.0C102.8 103.0 103.7 110.5 104.0 116.0C104.3 121.5 104.0 128.0 103.0 133.0C102.0 138.0 99.7 144.7 98.0 146.0C96.3 147.3 93.8 145.7 93.0 141.0C92.2 136.3 93.0 125.2 93.0 118.0C93.0 110.8 91.7 101.0 93.0 98.0Z"], ["quads", "M66.0 160.0C63.2 158.0 58.3 161.3 56.0 165.0C53.7 168.7 52.7 175.0 52.0 182.0C51.3 189.0 51.3 199.2 52.0 207.0C52.7 214.8 54.2 224.0 56.0 229.0C57.8 234.0 60.7 236.8 63.0 237.0C65.3 237.2 68.3 235.2 70.0 230.0C71.7 224.8 72.5 214.8 73.0 206.0C73.5 197.2 74.2 184.7 73.0 177.0C71.8 169.3 68.8 162.0 66.0 160.0ZM94.0 160.0C96.8 158.0 101.7 161.3 104.0 165.0C106.3 168.7 107.3 175.0 108.0 182.0C108.7 189.0 108.7 199.2 108.0 207.0C107.3 214.8 105.8 224.0 104.0 229.0C102.2 234.0 99.3 236.8 97.0 237.0C94.7 237.2 91.7 235.2 90.0 230.0C88.3 224.8 87.5 214.8 87.0 206.0C86.5 197.2 85.8 184.7 87.0 177.0C88.2 169.3 91.2 162.0 94.0 160.0Z"], ["calves", "M56.0 252.0C54.7 253.3 53.3 259.7 53.0 266.0C52.7 272.3 53.3 283.5 54.0 290.0C54.7 296.5 55.8 303.3 57.0 305.0C58.2 306.7 60.2 304.2 61.0 300.0C61.8 295.8 62.0 287.0 62.0 280.0C62.0 273.0 62.0 262.7 61.0 258.0C60.0 253.3 57.3 250.7 56.0 252.0ZM104.0 252.0C105.3 253.3 106.7 259.7 107.0 266.0C107.3 272.3 106.7 283.5 106.0 290.0C105.3 296.5 104.2 303.3 103.0 305.0C101.8 306.7 99.8 304.2 99.0 300.0C98.2 295.8 98.0 287.0 98.0 280.0C98.0 273.0 98.0 262.7 99.0 258.0C100.0 253.3 102.7 250.7 104.0 252.0Z"]];
+const BACK = [["upperBack", "M80.0 41.0C78.7 32.5 75.8 41.8 72.0 44.0C68.2 46.2 58.3 51.2 57.0 54.0C55.7 56.8 61.5 57.3 64.0 61.0C66.5 64.7 69.7 70.5 72.0 76.0C74.3 81.5 76.7 90.8 78.0 94.0C79.3 97.2 79.7 103.8 80.0 95.0C80.3 86.2 81.3 49.5 80.0 41.0ZM80.0 41.0C81.3 32.5 84.2 41.8 88.0 44.0C91.8 46.2 101.7 51.2 103.0 54.0C104.3 56.8 98.5 57.3 96.0 61.0C93.5 64.7 90.3 70.5 88.0 76.0C85.7 81.5 83.3 90.8 82.0 94.0C80.7 97.2 80.3 103.8 80.0 95.0C79.7 86.2 78.7 49.5 80.0 41.0Z"], ["rearDelts", "M55.0 57.0C53.7 55.8 48.2 58.2 46.0 60.0C43.8 61.8 42.5 64.7 42.0 68.0C41.5 71.3 42.0 78.2 43.0 80.0C44.0 81.8 46.2 81.2 48.0 79.0C49.8 76.8 52.8 70.7 54.0 67.0C55.2 63.3 56.3 58.2 55.0 57.0ZM105.0 57.0C106.3 55.8 111.8 58.2 114.0 60.0C116.2 61.8 117.5 64.7 118.0 68.0C118.5 71.3 118.0 78.2 117.0 80.0C116.0 81.8 113.8 81.2 112.0 79.0C110.2 76.8 107.2 70.7 106.0 67.0C104.8 63.3 103.7 58.2 105.0 57.0Z"], ["sideDelts", "M44.0 58.0C43.3 58.0 40.3 61.3 39.0 64.0C37.7 66.7 36.2 70.7 36.0 74.0C35.8 77.3 37.0 84.0 38.0 84.0C39.0 84.0 41.2 77.3 42.0 74.0C42.8 70.7 42.7 66.7 43.0 64.0C43.3 61.3 44.7 58.0 44.0 58.0ZM116.0 58.0C116.7 58.0 119.7 61.3 121.0 64.0C122.3 66.7 123.8 70.7 124.0 74.0C124.2 77.3 123.0 84.0 122.0 84.0C121.0 84.0 118.8 77.3 118.0 74.0C117.2 70.7 117.3 66.7 117.0 64.0C116.7 61.3 115.3 58.0 116.0 58.0Z"], ["lats", "M65.0 72.0C62.2 69.0 58.3 75.5 56.0 79.0C53.7 82.5 51.2 87.3 51.0 93.0C50.8 98.7 53.0 107.0 55.0 113.0C57.0 119.0 60.2 125.2 63.0 129.0C65.8 132.8 69.8 137.3 72.0 136.0C74.2 134.7 75.8 127.5 76.0 121.0C76.2 114.5 74.8 105.2 73.0 97.0C71.2 88.8 67.8 75.0 65.0 72.0ZM95.0 72.0C97.8 69.0 101.7 75.5 104.0 79.0C106.3 82.5 108.8 87.3 109.0 93.0C109.2 98.7 107.0 107.0 105.0 113.0C103.0 119.0 99.8 125.2 97.0 129.0C94.2 132.8 90.2 137.3 88.0 136.0C85.8 134.7 84.2 127.5 84.0 121.0C83.8 114.5 85.2 105.2 87.0 97.0C88.8 88.8 92.2 75.0 95.0 72.0Z"], ["triceps", "M45.0 84.0C43.8 84.5 42.0 89.3 41.0 93.0C40.0 96.7 39.0 101.7 39.0 106.0C39.0 110.3 39.8 117.2 41.0 119.0C42.2 120.8 44.8 119.7 46.0 117.0C47.2 114.3 47.7 107.5 48.0 103.0C48.3 98.5 48.5 93.2 48.0 90.0C47.5 86.8 46.2 83.5 45.0 84.0ZM115.0 84.0C116.2 84.5 118.0 89.3 119.0 93.0C120.0 96.7 121.0 101.7 121.0 106.0C121.0 110.3 120.2 117.2 119.0 119.0C117.8 120.8 115.2 119.7 114.0 117.0C112.8 114.3 112.3 107.5 112.0 103.0C111.7 98.5 111.5 93.2 112.0 90.0C112.5 86.8 113.8 83.5 115.0 84.0Z"], ["forearms", "M40.0 123.0C38.7 123.3 36.3 128.8 35.0 133.0C33.7 137.2 32.7 143.5 32.0 148.0C31.3 152.5 30.5 157.8 31.0 160.0C31.5 162.2 33.7 163.3 35.0 161.0C36.3 158.7 37.7 151.0 39.0 146.0C40.3 141.0 42.8 134.8 43.0 131.0C43.2 127.2 41.3 122.7 40.0 123.0ZM120.0 123.0C121.3 123.3 123.7 128.8 125.0 133.0C126.3 137.2 127.3 143.5 128.0 148.0C128.7 152.5 129.5 157.8 129.0 160.0C128.5 162.2 126.3 163.3 125.0 161.0C123.7 158.7 122.3 151.0 121.0 146.0C119.7 141.0 117.2 134.8 117.0 131.0C116.8 127.2 118.7 122.7 120.0 123.0Z"], ["lowerBack", "M78.0 118.0C77.2 113.0 74.3 120.3 73.0 124.0C71.7 127.7 70.0 135.2 70.0 140.0C70.0 144.8 71.7 150.7 73.0 153.0C74.3 155.3 77.2 159.8 78.0 154.0C78.8 148.2 78.8 123.0 78.0 118.0ZM82.0 118.0C82.8 113.0 85.7 120.3 87.0 124.0C88.3 127.7 90.0 135.2 90.0 140.0C90.0 144.8 88.3 150.7 87.0 153.0C85.7 155.3 82.8 159.8 82.0 154.0C81.2 148.2 81.2 123.0 82.0 118.0Z"], ["glutes", "M79.0 157.0C77.0 154.0 71.5 154.3 68.0 155.0C64.5 155.7 60.3 157.7 58.0 161.0C55.7 164.3 54.0 170.3 54.0 175.0C54.0 179.7 55.7 186.0 58.0 189.0C60.3 192.0 64.7 193.0 68.0 193.0C71.3 193.0 76.0 192.3 78.0 189.0C80.0 185.7 79.8 178.3 80.0 173.0C80.2 167.7 81.0 160.0 79.0 157.0ZM81.0 157.0C83.0 154.0 88.5 154.3 92.0 155.0C95.5 155.7 99.7 157.7 102.0 161.0C104.3 164.3 106.0 170.3 106.0 175.0C106.0 179.7 104.3 186.0 102.0 189.0C99.7 192.0 95.3 193.0 92.0 193.0C88.7 193.0 84.0 192.3 82.0 189.0C80.0 185.7 80.2 178.3 80.0 173.0C79.8 167.7 79.0 160.0 81.0 157.0Z"], ["hamstrings", "M63.0 197.0C60.2 196.7 56.8 198.0 55.0 201.0C53.2 204.0 52.2 209.7 52.0 215.0C51.8 220.3 52.7 228.7 54.0 233.0C55.3 237.3 57.8 240.3 60.0 241.0C62.2 241.7 65.2 240.3 67.0 237.0C68.8 233.7 70.2 226.7 71.0 221.0C71.8 215.3 73.3 207.0 72.0 203.0C70.7 199.0 65.8 197.3 63.0 197.0ZM97.0 197.0C99.8 196.7 103.2 198.0 105.0 201.0C106.8 204.0 107.8 209.7 108.0 215.0C108.2 220.3 107.3 228.7 106.0 233.0C104.7 237.3 102.2 240.3 100.0 241.0C97.8 241.7 94.8 240.3 93.0 237.0C91.2 233.7 89.8 226.7 89.0 221.0C88.2 215.3 86.7 207.0 88.0 203.0C89.3 199.0 94.2 197.3 97.0 197.0Z"], ["calves", "M56.0 248.0C54.3 249.8 51.8 255.8 51.0 261.0C50.2 266.2 50.3 273.7 51.0 279.0C51.7 284.3 53.3 290.3 55.0 293.0C56.7 295.7 59.3 297.0 61.0 295.0C62.7 293.0 64.5 286.7 65.0 281.0C65.5 275.3 64.7 266.2 64.0 261.0C63.3 255.8 62.3 252.2 61.0 250.0C59.7 247.8 57.7 246.2 56.0 248.0ZM104.0 248.0C105.7 249.8 108.2 255.8 109.0 261.0C109.8 266.2 109.7 273.7 109.0 279.0C108.3 284.3 106.7 290.3 105.0 293.0C103.3 295.7 100.7 297.0 99.0 295.0C97.3 293.0 95.5 286.7 95.0 281.0C94.5 275.3 95.3 266.2 96.0 261.0C96.7 255.8 97.7 252.2 99.0 250.0C100.3 247.8 102.3 246.2 104.0 248.0Z"]];
+const FRONT_LINES = "M70 110Q75 111.5 80 110Q85 111.5 90 110 M70 124Q75 125.5 80 124Q85 125.5 90 124 M70 138Q75 139.5 80 138Q85 139.5 90 138 M80 96L80 152 M80 64L80 90";
+const BACK_LINES = "M80 44L80 152 M64 186Q70 190 78 186 M96 186Q90 190 82 186";
+function bodySvg(parts, lines, w, label){
+  const id = label.toLowerCase();
+  return `<svg class="body" viewBox="0 0 160 345" role="img" aria-label="${label} muscle map">
+    <defs><linearGradient id="shade-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient>
+    <radialGradient id="skin-${id}" cx=".5" cy=".35" r=".7"><stop offset="0" stop-color="var(--fig-hi)"/><stop offset="1" stop-color="var(--fig)"/></radialGradient></defs>
+    <path class="sil" d="${SIL_D}" fill="url(#skin-${id})"/>
+    ${parts.map(([m, d]) => `<g class="mu ${state.muscle === m ? "sel" : ""}" data-act="muscle" data-m="${m}"><title>${MUSCLES[m]}: ${round1(w.sets[m])} sets</title><path d="${d}" fill="${heat(w.sets[m])}"/><path class="gloss" d="${d}" fill="url(#shade-${id})"/></g>`).join("")}
+    <path class="detail" d="${lines}"/></svg>`;
+}
+function renderBody(){
+  const w = weekMuscles(), m = state.muscle;
+  const list = Object.keys(MUSCLES).sort((a, b) => w.sets[a] - w.sets[b]);
+  const sel = m ? `<div class="stat"><b style="font-size:20px">${MUSCLES[m]} · ${round1(w.sets[m])} sets</b>
+    <span>${Object.entries(w.by[m]).length ? Object.entries(w.by[m]).map(([n, v]) => `${esc(n)} ${round1(v)}`).join(" · ") : "Not trained yet this week."}</span></div>` : `<p class="small muted">Tap a muscle to see which exercises hit it.</p>`;
+  return `<div class="card"><div class="spread"><h2 style="font-size:24px">This week's muscles</h2><span class="small muted">from ${esc(fmtDate(w.start))}</span></div>
+    <div class="bodies"><figure>${bodySvg(FRONT, FRONT_LINES, w, "Front")}<figcaption>Front</figcaption></figure><figure>${bodySvg(BACK, BACK_LINES, w, "Back")}<figcaption>Back</figcaption></figure></div>
+    <div><div class="heat"></div><div class="spread small muted" style="margin-top:4px"><span>0 sets</span><span>5</span><span>10+ sets</span></div></div>
+    ${sel}</div>
+  <div class="card"><h2 style="font-size:22px">Sets per muscle</h2><div>${list.map(k => `<button class="mrow ${m === k ? "sel" : ""}" data-act="muscle" data-m="${k}"><span class="mn">${MUSCLES[k]}</span><span class="mbar"><span style="width:${Math.min(w.sets[k], 10)*10}%;background:${heat(w.sets[k])}"></span></span><span class="mv num">${round1(w.sets[k])}</span></button>`).join("")}</div>
+    <p class="small muted">Counts ticked sets from Monday to Sunday. The main muscle of an exercise gets a full set and helper muscles get half, so 4 sets of bench is 4 for chest and 2 each for triceps and front delts. About 10 hard sets a week is enough to grow a muscle.</p></div>`;
+}
+function renderExPage(){
+  const name = state.exPage, std = stdFor(name), L = ladderOf(std), bw = bwOn(TODAY), h = exHistory(name);
+  const best = h.reduce((a, x) => (!a || x.sc.x > a.sc.x) ? x : a, null);
+  const cur = best ? rankAt(L, best.sc.x) : -1, nx = L[cur+1];
+  const basis = std.basis === "reps" ? "Ranked by reps in one set, counting the reps you had left from RPE."
+    : std.basis === "added" ? "Ranked by your one-rep max with bodyweight plus added weight, divided by your bodyweight. Log only the added kg."
+    : "Ranked by your estimated one-rep max divided by your bodyweight.";
+  const cut = r => std.basis === "reps" ? `${Math.ceil(r.min)} reps` : !bw ? "–" : std.basis === "added" ? `+${Math.max(0, r25(r.min*bw - bw))} kg` : `${r25(r.min*bw)} kg`;
+  return `<div class="row"><button class="btn ghost" data-act="expage-close">← Back</button></div>
+  <div class="card"><div class="eyebrow">Exercise ranks</div><h2 style="font-size:30px">${esc(baseName(name))}</h2>
+    <p class="small muted">${basis}${std.note ? ` Weight used: ${esc(std.note)}.` : ""}</p>
+    ${best ? `<div class="li" style="border:none"><div class="rankname">${medal(L[cur])}<span>${rankName(L[cur])}<br><span class="small muted">Best: ${esc(best.st.kg || "bodyweight")}${best.st.kg ? " kg" : ""} × ${esc(best.st.reps)}${best.st.rpe ? ` @ RPE ${esc(best.st.rpe)}` : ""} · ${esc(fmtDate(best.date))}</span></span></div></div>
+      ${nx ? `<div class="stat"><span>Next: <b style="display:inline;font-size:16px">${rankName(nx)}</b></span><div class="small">Needs about ${needFor(std, nx.min, bw || best.bw)}${std.basis !== "reps" ? " (or the same max with other reps)" : ""}.</div></div>` : `<div class="stat"><b>Top rank reached</b></div>`}`
+      : `<p class="empty">No ranked sets yet. Tick a set of this exercise to earn your first medal.</p>`}
+  </div>
+  <div class="card"><h2 style="font-size:22px">Rank ladder</h2><p class="small muted">${std.basis === "reps" ? "Reps in one set" : `${std.basis === "added" ? "Added weight for one rep" : "Estimated max"} at your bodyweight of ${bw ?? "–"} kg`} to enter each rank.</p>
+    <div class="tscroll"><table class="t num ranks">${L.map((r, i) => `<tr${i === cur ? ' style="background:var(--sunk)"' : ""}><td><span class="rankname">${medal(r)}${rankName(r)}${i === cur ? ' <span class="small muted">· you</span>' : ""}</span></td><td>${i === 0 ? "start" : cut(r)}</td></tr>`).reverse().join("")}</table></div></div>
+  <div class="card"><h2 style="font-size:22px">Medal history</h2>${h.length ? `<div class="list">${h.map(x => `<div class="li"><div class="rankname">${medal(x.rank)}<span>${rankName(x.rank)}<br><span class="small muted">${esc(x.st.kg || "bodyweight")}${x.st.kg ? " kg" : ""} × ${esc(x.st.reps)}${x.st.rpe ? ` @ ${esc(x.st.rpe)}` : ""}</span></span></div><span class="small muted">${esc(fmtDate(x.date))}</span></div>`).join("")}</div>` : `<p class="empty">Nothing yet.</p>`}</div>`;
+}
+/* backup: one JSON blob with every saved document */
+function backupText(){ return JSON.stringify({app:"pbLog", version:1, exported:new Date().toISOString(), docs}); }
+function mergeDocs(inc){
+  const cnt = x => (x.exercises || []).reduce((a, e) => a + (e.sets || []).filter(s => s.done).length, 0);
+  let n = 0;
+  for (const [id, d] of Object.entries(inc)){
+    if (!d || typeof d !== "object" || !/^[A-Za-z0-9_.~:@+-]+$/.test(id)) continue;
+    const cur = docs[id];
+    if (d.type === "session"){ if (!cur || cnt(d) > cnt(cur)) { save(id, d); n++; } }
+    else if (d.type === "bodyweight"){ const entries = {...(d.entries || {}), ...((cur && cur.entries) || {})}; if (!cur || Object.keys(entries).length > Object.keys(cur.entries || {}).length) { save(id, {type:"bodyweight", entries}); n++; } }
+    else if (d.type === "settings"){ save(id, cur ? {...cur, ...d} : d); n++; }
+  }
+  return n;
+}
+async function restoreBackup(){
+  const msg = $("imp-msg"); let txt = $("imp-text").value.trim();
+  const f = $("imp-file").files && $("imp-file").files[0];
+  if (!txt && f) txt = await f.text();
+  let data = null; try { data = JSON.parse(txt); } catch {}
+  if (!data || data.app !== "pbLog" || !data.docs){ msg.textContent = "That isn't a tracker backup. Copy it again from the other version and paste the whole thing."; return; }
+  const n = mergeDocs(data.docs); applyPlan(); state.session = null;
+  render(); const m2 = $("imp-msg"); if (m2) m2.textContent = n ? `Restored ${n} item${n === 1 ? "" : "s"}. Check the Log tab.` : "Everything in that backup was already here.";
+}
+async function backupSave(btn){
+  const name = `powerbuilding-backup-${TODAY}.json`, text = backupText();
+  try {
+    const dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+    if (dl) { await dl.save({filename:name, data:new Blob([text], {type:"application/json"})}); btn.textContent = "Saved"; return; }
+  } catch (e) { if (e && e.code === "declined") return; }
+  try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], {type:"application/json"})); a.download = name; document.body.appendChild(a); a.click(); a.remove(); btn.textContent = "Saved"; }
+  catch { btn.textContent = "Use Copy backup instead"; }
+}
+function renderNav(){
+  $("nav").innerHTML = [["today","Today"],["body","Body"],["progress","Progress"],["log","Log"],["plan","Plan"]].map(([k,l]) => `<button class="tab ${state.tab===k?"on":""}" data-act="tab" data-v="${k}" ${state.tab===k?'aria-current="page"':""}>${l}</button>`).join("");
+}
+function render(){
+  renderHeader(); renderNav();
+  $("main").innerHTML = state.exPage ? renderExPage() : state.tab === "today" ? renderToday() : state.tab === "body" ? renderBody() : state.tab === "progress" ? renderProgress() : state.tab === "log" ? renderLog() : renderPlan();
+}
+
+/* ---------- rest timer ---------- */
+let tick = null;
+function startTimer(secs){
+  state.timer = {end: Date.now() + secs*1000}; clearInterval(tick);
+  tick = setInterval(drawTimer, 250); drawTimer();
+}
+function drawTimer(){
+  const el = $("timer"); if (!state.timer){ el.hidden = true; clearInterval(tick); return; }
+  const left = Math.round((state.timer.end - Date.now())/1000);
+  const a = Math.abs(left), txt = `${left<0?"+":""}${Math.floor(a/60)}:${String(a%60).padStart(2,"0")}`;
+  el.hidden = false; el.classList.toggle("over", left <= 0);
+  el.innerHTML = `<div class="in"><div class="t num"><small>${left>0?"Rest":"Go"}</small>${txt}</div><button data-act="t-add">+30s</button><button data-act="t-stop">Done</button></div>`;
+}
+let wake = null;
+async function keepAwake(){ try { if (!wake && navigator.wakeLock) { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => wake = null); } } catch {} }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && state.tab === "today") keepAwake(); });
+
+/* ---------- events ---------- */
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-act]"); if (!b) return;
+  const act = b.dataset.act, i = +b.dataset.i, j = +b.dataset.j;
+  if (act !== "rm" && act !== "log-del") state.confirm = null;
+  const s = state.tab === "today" ? currentSession() : null;
+  switch (act){
+    case "backup-copy": { const txt = backupText(); navigator.clipboard.writeText(txt).then(() => { b.textContent = "Copied"; }, () => { $("imp-text").value = txt; $("imp-text").select(); b.textContent = "Selected below, copy it"; }); return; }
+    case "backup-save": backupSave(b); return;
+    case "muscle": state.muscle = state.muscle === b.dataset.m ? null : b.dataset.m; break;
+    case "expage": state.exPage = b.dataset.name; state.exScroll = scrollY; render(); scrollTo(0,0); return;
+    case "expage-close": state.exPage = null; render(); scrollTo(0, state.exScroll || 0); return;
+    case "tab": state.exPage = null; state.tab = b.dataset.v; try { localStorage.setItem("pbLog.tab", state.tab); } catch {} render(); scrollTo(0,0); return;
+    case "week": state.week = +b.dataset.v; state.session = null; state.menu = null; break;
+    case "day": state.day = b.dataset.v; state.session = null; state.menu = null; break;
+    case "close-open": state.openId = null; state.session = null; { const t = blockWeekFor(TODAY); state.week = t.week; state.day = dayName(TODAY); } break;
+    case "bw-edit": state.bwEdit = true; break;
+    case "menu": state.menu = state.menu === i ? null : i; break;
+    case "done": {
+      keepAwake();
+      const ex = s.exercises[i], st = ex.sets[j], p = ex.plan || {};
+      if (!st.done){
+        const row = b.closest(".setrow");
+        const ph = f => row.querySelector(`[data-f="${f}"]`).placeholder;
+        if (st.kg === "") st.kg = ph("kg"); if (st.reps === "") st.reps = ph("reps"); if (st.rpe === "") st.rpe = ph("rpe");
+        st.done = true; startTimer(restSecs(p.rest));
+      } else st.done = false;
+      persist(s); break;
+    }
+    case "addset": { const ex = s.exercises[i]; const l = ex.sets[ex.sets.length-1]; ex.sets.push({kg:l?l.kg:"", reps:"", rpe:"", done:false}); persist(s); break; }
+    case "rmset": s.exercises[i].sets.pop(); persist(s); break;
+    case "up": case "down": { const k = act==="up" ? i-1 : i+1; [s.exercises[i], s.exercises[k]] = [s.exercises[k], s.exercises[i]]; state.menu = k; persist(s); break; }
+    case "rm": if (state.confirm === "rm-"+i){ s.exercises.splice(i,1); state.menu = null; state.confirm = null; persist(s); } else state.confirm = "rm-"+i; break;
+    case "finish": s.finished = true; s.finishedAt = Date.now(); state.timer = null; persist(s); scrollTo(0,0); break;
+    case "t-add": if (state.timer) state.timer.end += 30000; drawTimer(); return;
+    case "t-stop": state.timer = null; drawTimer(); return;
+    case "log-toggle": state.logOpen = state.logOpen === b.dataset.id ? null : b.dataset.id; break;
+    case "log-edit": { const d = docs[b.dataset.id]; state.openId = b.dataset.id; state.week = d.week; state.day = d.day; state.tab = "today"; render(); scrollTo(0,0); return; }
+    case "log-del": { const id = b.dataset.id; if (state.confirm === "del-"+id){ removeDoc(id); state.confirm = null; state.logOpen = null; if (state.openId === id) state.openId = null; state.session = null; } else state.confirm = "del-"+id; break; }
+    case "use-logged": { const m = maxes(); const nm = {}; LIFTS.forEach(l => { const h = exerciseHistory({"bench":"Barbell Bench Press","squat":"Back Squat","deadlift":"Conventional Deadlift"}[l]); const b = h.length ? r25(Math.max(...h.map(x=>x.e1))) : 0; nm[l] = Math.max(m[l], b); }); save("settings", {...docs.settings, type:"settings", maxes: nm}); state.session = null; break; }
+    case "setplan": save("settings", {...docs.settings, type:"settings", plan: b.dataset.v}); applyPlan(); state.session = null; break;
+    case "setweek": { const w = +b.dataset.v; save("settings", {...docs.settings, type:"settings", cycleStart: addDays(mondayOf(TODAY), -(w-1)*7)}); state.week = w; state.session = null; break; }
+  }
+  render();
+});
+document.addEventListener("input", ev => {
+  const t = ev.target;
+  if (t.id === "prog-ex"){ state.progressEx = t.value; render(); return; }
+  if (state.tab !== "today") return;
+  const s = currentSession(); if (!s) return;
+  if (t.dataset.f === "notes"){ s.notes = t.value; persist(s); return; }
+  const row = t.closest(".setrow"); if (!row || !t.dataset.f) return;
+  s.exercises[+row.dataset.i].sets[+row.dataset.j][t.dataset.f] = t.value.replace(",", ".").trim();
+  persist(s);
+});
+document.addEventListener("change", ev => { if (ev.target.id === "prog-ex"){ state.progressEx = ev.target.value; render(); } });
+document.addEventListener("submit", ev => {
+  ev.preventDefault();
+  const f = ev.target.dataset.form;
+  if (f === "bw"){
+    const v = parseFloat(($("bw-in").value||"").replace(",", "."));
+    if (v > 20 && v < 400){ const entries = {...bwEntries(), [TODAY]: round1(v)}; save("bodyweight", {type:"bodyweight", entries}); state.bwEdit = false; }
+    else { $("bw-in").setCustomValidity("Enter your weight in kg, like 82.4"); $("bw-in").reportValidity(); setTimeout(() => $("bw-in") && $("bw-in").setCustomValidity(""), 1500); return; }
+  }
+  const s = state.tab === "today" ? currentSession() : null;
+  if (f === "restore"){ restoreBackup(); return; }
+  if (f === "maxes"){
+    const nm = {}; for (const l of LIFTS){ const v = parseFloat(($("max-"+l).value||"").replace(",", ".")); if (!(v >= 20 && v <= 500)) { $("max-"+l).setCustomValidity("Enter a max in kg"); $("max-"+l).reportValidity(); setTimeout(() => $("max-"+l) && $("max-"+l).setCustomValidity(""), 1500); return; } nm[l] = v; }
+    save("settings", {...docs.settings, type:"settings", maxes: nm}); state.session = null; setSync("Weights updated");
+  }
+  if (f === "rename" && s){ const i = +ev.target.dataset.i; const n = $("rn-"+i).value.trim(); if (n){ s.exercises[i].name = n; s.exercises[i].main = false; state.menu = null; persist(s); } }
+  if (f === "addex" && s){
+    const n = $("ax-name").value.trim(); if (!n) return;
+    const sets = Math.min(Math.max(parseInt($("ax-sets").value)||3, 1), 10), reps = $("ax-reps").value.trim() || "10";
+    s.exercises.push({name:n, main:false, plan:{sets, reps, weight:"your choice", targetKg:null, rpe:"8", rest:"90 s"}, sets:Array.from({length:sets}, newSet)});
+    persist(s);
+  }
+  render();
+});
+
+ensureSettings();
+{ const t = blockWeekFor(TODAY); state.week = t.week; }
+render();
+connectDb();
+</script>
+
+<script>if("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}</script>
+</body></html>
